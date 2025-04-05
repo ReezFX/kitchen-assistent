@@ -170,6 +170,9 @@ function renderRecipeList(recipes) {
         });
         
         fragment.appendChild(recipeCard);
+        
+        // Load recipe image after adding the card to fragment
+        loadRecipeCardImage(recipeCard, recipe.id);
     });
     
     elements.recipesContent.innerHTML = '';
@@ -516,6 +519,36 @@ function init() {
     fetchRecipes();
     
     console.log('Application initialized');
+}
+
+// Load and display an image for a recipe card
+async function loadRecipeCardImage(recipeCard, recipeId) {
+    try {
+        const response = await fetch(`/api/recipes/${recipeId}/image`);
+        
+        if (!response.ok) {
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.image_url) {
+            // Find the image placeholder
+            const imagePlaceholder = recipeCard.querySelector('.recipe-image div');
+            
+            // Replace placeholder with actual image
+            if (imagePlaceholder) {
+                imagePlaceholder.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = data.image_url;
+                img.alt = recipeCard.querySelector('h3').textContent;
+                img.className = 'w-full h-full object-cover rounded-t-lg';
+                imagePlaceholder.appendChild(img);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading recipe card image:', error);
+    }
 }
 
 // Start the application when the DOM is fully loaded

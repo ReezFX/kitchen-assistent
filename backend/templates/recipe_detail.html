@@ -154,9 +154,42 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const recipeId = {{ recipe_id }};
             await fetchRecipeDetails(recipeId);
+            loadRecipeImage(recipeId);
             setupAIAssistant(recipeId);
         });
 
+        // Function to load recipe image
+        async function loadRecipeImage(recipeId) {
+            try {
+                const response = await fetch(`/api/recipes/${recipeId}/image`);
+                
+                if (!response.ok) {
+                    console.error('Error fetching recipe image');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.image_url) {
+                    // Find the image placeholder
+                    const imagePlaceholder = document.querySelector('.recipe-image div');
+                    
+                    // Replace placeholder with actual image
+                    if (imagePlaceholder) {
+                        imagePlaceholder.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = data.image_url;
+                        img.alt = document.getElementById('detail-title').textContent;
+                        img.className = 'w-full h-full object-cover rounded-2xl';
+                        imagePlaceholder.appendChild(img);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading recipe image:', error);
+            }
+        }
+        
+        // Function to fetch and display recipe details
         async function fetchRecipeDetails(recipeId) {
             try {
                 const response = await fetch(`/api/recipes/${recipeId}`);

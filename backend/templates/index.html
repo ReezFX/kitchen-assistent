@@ -10,23 +10,32 @@
     <style>
         /* Markdown styling */
         #assistant-response {
-            line-height: 1.6;
-        }
-        
-        #assistant-response h1, 
-        #assistant-response h2, 
-        #assistant-response h3, 
-        #assistant-response h4, 
-        #assistant-response h5, 
-        #assistant-response h6 {
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-        }
-        
-        #assistant-response h1 { font-size: 1.75rem; }
-        #assistant-response h2 { font-size: 1.5rem; }
-        #assistant-response h3 { font-size: 1.25rem; }
+                <nav class="space-y-4">
+                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-utensils mr-2"></i> Recipes
+                    </a>
+                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-robot mr-2"></i> Assistant
+                    </a>
+                    <div class="px-4 py-2">
+                        <span class="block text-sm text-gray-500 mb-2">Language</span>
+                        <div class="language-toggle-mobile flex rounded-lg overflow-hidden border border-gray-200 w-max">
+                            <button id="lang-en-mobile" data-language="en" class="px-3 py-1 text-sm font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
+                            <button id="lang-de-mobile" data-language="de" class="px-3 py-1 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
+                        </div>
+                    </div>
+                </nav>
+  <div class="flex items-center justify-between px-6 py-4">
+                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Recipes</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Assistant</a>
+                    <div class="language-toggle flex rounded-lg overflow-hidden border border-gray-200">
+                        <button id="lang-en" data-language="en" class="px-3 py-1 text-sm font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
+                        <button id="lang-de" data-language="de" class="px-3 py-1 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
+                    </div>
+                </div>
+            </div>
         
         #assistant-response p {
             margin-bottom: 1rem;
@@ -165,9 +174,15 @@
         <nav class="mobile-only bg-white shadow-md fixed w-full z-50">
             <div class="flex items-center justify-between px-4 py-3">
                 <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
-                <button id="mobile-menu-button" class="p-2">
-                    <i class="fas fa-bars text-gray-500"></i>
-                </button>
+                <div class="flex items-center">
+                    <div class="language-toggle-mobile flex rounded-lg overflow-hidden border border-gray-200 mr-2">
+                        <button id="lang-en-mobile-top" data-language="en" class="px-2 py-1 text-xs font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
+                        <button id="lang-de-mobile-top" data-language="de" class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
+                    </div>
+                    <button id="mobile-menu-button" class="p-2">
+                        <i class="fas fa-bars text-gray-500"></i>
+                    </button>
+                </div>
             </div>
         </nav>
 
@@ -359,6 +374,7 @@
         });
     </script>
 
+    <script src="/static/js/debug.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

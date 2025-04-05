@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Loading</title>
+</head>
+<body>
+    <h1>Test Image Loading</h1>
+    <div id="output"></div>
+    <script>
+        async function testImageLoading() {
+            try {
+                // Output element
+                const output = document.getElementById('output');
+                output.innerHTML += '<p>Testing image loading...</p>';
+                
+                // First, fetch the image URL from the API
+                const response = await fetch('http://localhost:5000/api/recipes/1/image');
+                const data = await response.json();
+                
+                output.innerHTML += `<p>API response: ${JSON.stringify(data)}</p>`;
+                
+                if (data.image_url) {
+                    output.innerHTML += `<p>Trying to load image from: ${data.image_url}</p>`;
+                    
+                    // Create an image element
+                    const img = document.createElement('img');
+                    img.src = 'http://localhost:5000' + data.image_url;
+                    img.alt = 'Recipe Image';
+                    img.style.maxWidth = '300px';
+                    
+                    // Log when the image loads successfully
+                    img.onload = () => {
+                        output.innerHTML += '<p style="color:green">Image loaded successfully!</p>';
+                    };
+                    
+                    // Log if there's an error loading the image
+                    img.onerror = (error) => {
+                        output.innerHTML += `<p style="color:red">Error loading image: ${error}</p>`;
+                    };
+                    
+                    output.appendChild(img);
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML += `<p style="color:red">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run the test when the page loads
+        window.onload = testImageLoading;
+    </script>
+</body>
+</html>

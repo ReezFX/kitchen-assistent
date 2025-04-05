@@ -1,0 +1,62 @@
+{
+  "general": {
+    "app_title": "Kitchen Assistant",
+    "loading": "Loading..."
+  },
+  "navigation": {
+    "menu": "Menu",
+    "recipes": "Recipes",
+    "assistant": "Assistant",
+    "back_to_recipes": "Back to Recipes"
+  },
+  "home": {
+    "welcome_title": "Welcome to Kitchen Assistant",
+    "welcome_text": "Find your next culinary adventure with our curated collection of recipes and expert cooking assistance.",
+    "search_placeholder": "Search recipes...",
+    "search_button": "Search",
+    "no_recipes_found": "No recipes found. Try a different search."
+  },
+  "categories": {
+    "popular_categories": "Popular Categories",
+    "vegetarian": "Vegetarian",
+    "quick": "Quick",
+    "healthy": "Healthy",
+    "pasta": "Pasta",
+    "asian": "Asian"
+  },
+  "recipe": {
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "cook_time": "minutes",
+    "servings": "servings"
+  },
+  "recipe_cards": {
+    "loading_recipes": "Loading recipes..."
+  },
+  "assistant": {
+    "title": "AI Kitchen Assistant",
+    "powered_by": "Powered by AI",
+    "description": "Ask me about cooking techniques, ingredient substitutions, or recipe modifications",
+    "prompt_placeholder": "Example: How can I make this recipe vegetarian?",
+    "ask_button": "Ask",
+    "thinking": "Thinking...",
+    "voice_not_available": "Voice input is not available in this demo",
+    "listening": "Listening...",
+    "processing": "Processing..."
+  },
+  "errors": {
+    "error_loading_recipes": "Error loading recipes:",
+    "no_response": "Sorry, I had trouble processing your request. Please try again.",
+    "voice_not_supported": "Voice recognition is not supported in your browser",
+    "no_speech_detected": "No speech detected. Please try speaking louder and clearly.",
+    "empty_query": "Please enter a question for the assistant"
+  },
+  "mobile": {
+    "voice_search": "Voice search",
+    "voice_assistant": "Voice assistant"
+  },
+  "recipe_detail": {
+    "recipe_title": "Recipe Detail - Kitchen Assistant"
+  }
+}
+
