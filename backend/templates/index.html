@@ -104,6 +104,59 @@
         #assistant-response th {
             background-color: #f7fafc;
         }
+
+        /* Recipe card styling */
+        .recipe-card {
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .recipe-card.active {
+            border: 2px solid #3b82f6;
+        }
+
+        .recipe-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .recipe-image::before {
+            content: '';
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .recipe-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .recipe-tag {
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        #recipes-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
     </style>
 </head>
 <body class="h-full">

@@ -132,7 +132,7 @@ async function fetchRecipes(query = '', tag = '') {
 // Render the list of recipes
 function renderRecipeList(recipes) {
     if (recipes.length === 0) {
-        elements.recipesContent.innerHTML = '<p>No recipes found. Try a different search.</p>';
+        elements.recipesContent.innerHTML = '<p class="text-center text-gray-500 my-8">No recipes found. Try a different search.</p>';
         return;
     }
     
@@ -140,20 +140,33 @@ function renderRecipeList(recipes) {
     
     recipes.forEach(recipe => {
         const recipeCard = document.createElement('div');
-        recipeCard.className = 'recipe-card';
+        recipeCard.className = 'recipe-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300';
         recipeCard.dataset.id = recipe.id;
         
+        // Create a placeholder for the recipe image
+        const imgPlaceholder = Math.floor(Math.random() * 5) + 1; // Random placeholder 1-5
+        
         const tagsHtml = recipe.tags.map(tag => 
-            `<span class="recipe-tag">${tag}</span>`
+            `<span class="recipe-tag bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full">${tag}</span>`
         ).join('');
         
         recipeCard.innerHTML = `
-            <h3>${recipe.name}</h3>
-            <div class="recipe-tags">${tagsHtml}</div>
+            <div class="recipe-image h-48 bg-gray-200 relative overflow-hidden">
+                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                    <i class="fas fa-utensils text-4xl"></i>
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 class="text-lg font-semibold mb-2 text-gray-900">${recipe.name}</h3>
+                <div class="text-sm text-gray-600 mb-2">
+                    <i class="fas fa-clock mr-1"></i> ${recipe.cook_time || '30 min'}
+                </div>
+                <div class="recipe-tags flex flex-wrap gap-1 mt-3">${tagsHtml}</div>
+            </div>
         `;
         
         recipeCard.addEventListener('click', () => {
-            selectRecipe(recipe.id);
+            window.location.href = `/recipe/${recipe.id}`;
         });
         
         fragment.appendChild(recipeCard);

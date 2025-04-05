@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from pathlib import Path
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, url_for
 from dotenv import load_dotenv
 import google.generativeai as genai
 import sounddevice as sd
@@ -100,6 +100,18 @@ def index():
     """Serve the main page"""
     return render_template('index.html')
 
+@app.route('/recipe/<int:recipe_id>')
+def recipe_detail(recipe_id):
+    """Route to show a specific recipe detail page"""
+    # Find the recipe by ID
+    recipe = next((r for r in RECIPES if r['id'] == recipe_id), None)
+    
+    if not recipe:
+        # Redirect to home page if recipe not found
+        return redirect(url_for('index'))
+    
+    # Pass the recipe ID to the template
+    return render_template('recipe_detail.html', recipe_id=recipe_id)
 @app.route('/api/recipes', methods=['GET'])
 def get_recipes():
     """API endpoint to get recipes, with optional filtering"""
