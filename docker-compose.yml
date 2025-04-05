@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app/backend
+      # Mount the entire app for development
+      - ./frontend:/app/frontend
+      # Named volume for persistent data storage
+      - recipe_data:/app/data
+    env_file:
+      - ./backend/.env
+    environment:
+      - FLASK_DEBUG=true
+    restart: unless-stopped
+    # Command that overrides the default entrypoint for development
+    command: python backend/app.py
+
+volumes:
+  recipe_data:
+    # This named volume will persist the recipe data between container restarts
+

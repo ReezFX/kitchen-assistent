@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Assistant</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <h1>Kitchen Assistant</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="search-container">
+            <form class="search-box" id="search-form">
+                <input type="text" class="search-input" id="search-input" placeholder="Search recipes...">
+                <button type="button" class="voice-input-button" id="voice-search-btn">
+                    <i class="icon">🎤</i>
+                </button>
+                <button type="submit" class="search-button">Search</button>
+            </form>
+            <div class="filter-tags" id="filters">
+                <!-- Tags will be populated dynamically -->
+                <span class="filter-tag" data-tag="vegetarian">Vegetarian</span>
+                <span class="filter-tag" data-tag="quick">Quick</span>
+                <span class="filter-tag" data-tag="healthy">Healthy</span>
+                <span class="filter-tag" data-tag="pasta">Pasta</span>
+                <span class="filter-tag" data-tag="asian">Asian</span>
+            </div>
+        </section>
+
+        <div class="app-layout">
+            <section class="sidebar" id="recipe-list">
+                <div id="recipes-loading" class="loading">Loading recipes...</div>
+                <div id="recipes-content" class="recipe-list">
+                    <!-- Recipe list items will be populated dynamically -->
+                </div>
+            </section>
+
+            <section class="main-content" id="recipe-detail">
+                <div id="recipe-placeholder">
+                    <p>Select a recipe to view details</p>
+                </div>
+                <div id="recipe-content" class="recipe-detail hidden">
+                    <div class="recipe-header">
+                        <div class="recipe-title">
+                            <h2 id="detail-title"></h2>
+                        </div>
+                    </div>
+                    
+                    <div class="recipe-info">
+                        <div class="info-item">
+                            <span class="label">Cook Time</span>
+                            <span class="value" id="detail-cook-time"></span> minutes
+                        </div>
+                    </div>
+                    
+                    <div class="recipe-content">
+                        <div class="ingredients-section">
+                            <h3>Ingredients</h3>
+                            <ul class="ingredients-list" id="detail-ingredients"></ul>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <h3>Instructions</h3>
+                            <ol class="instructions-list" id="detail-instructions"></ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="assistant-container">
+            <h2>AI Kitchen Assistant</h2>
+            <p>Ask me about cooking techniques, ingredient substitutions, or recipe modifications</p>
+            
+            <div class="assistant-input">
+                <input type="text" class="search-input" id="assistant-prompt" 
+                       placeholder="Example: How can I make this recipe vegetarian?">
+                <button type="button" class="voice-input-button" id="voice-assistant-btn">
+                    <i class="icon">🎤</i>
+                </button>
+                <button type="button" class="search-button" id="assistant-btn">Ask</button>
+            </div>
+            
+            <div id="assistant-loading" class="loading hidden">Thinking...</div>
+            <div id="assistant-response" class="assistant-response hidden"></div>
+        </section>
+    </main>
+
+    <script>
+        // JavaScript functionality will be loaded from an external file
+        document.addEventListener('DOMContentLoaded', function() {
+            // Placeholder for dynamic loading of JavaScript
+            const script = document.createElement('script');
+            script.src = '/static/js/main.js';
+            document.body.appendChild(script);
+        });
+    </script>
+</body>
+</html>
+
