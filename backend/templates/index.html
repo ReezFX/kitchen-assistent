@@ -1,105 +1,311 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-gray-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kitchen Assistant</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <style>
+        /* Markdown styling */
+        #assistant-response {
+            line-height: 1.6;
+        }
+        
+        #assistant-response h1, 
+        #assistant-response h2, 
+        #assistant-response h3, 
+        #assistant-response h4, 
+        #assistant-response h5, 
+        #assistant-response h6 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        #assistant-response h1 { font-size: 1.75rem; }
+        #assistant-response h2 { font-size: 1.5rem; }
+        #assistant-response h3 { font-size: 1.25rem; }
+        
+        #assistant-response p {
+            margin-bottom: 1rem;
+        }
+        
+        #assistant-response ul, 
+        #assistant-response ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        #assistant-response ul { list-style-type: disc; }
+        #assistant-response ol { list-style-type: decimal; }
+        
+        #assistant-response li {
+            margin-bottom: 0.25rem;
+        }
+        
+        #assistant-response strong {
+            font-weight: 600;
+        }
+        
+        #assistant-response em {
+            font-style: italic;
+        }
+        
+        #assistant-response blockquote {
+            border-left: 4px solid #e2e8f0;
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-right: 0;
+            font-style: italic;
+            color: #4a5568;
+        }
+        
+        #assistant-response code {
+            font-family: monospace;
+            background-color: #f7fafc;
+            padding: 0.1rem 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+        
+        #assistant-response pre {
+            background-color: #f7fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        #assistant-response pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        #assistant-response a {
+            color: #3182ce;
+            text-decoration: underline;
+        }
+        
+        #assistant-response table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        #assistant-response th, 
+        #assistant-response td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        #assistant-response th {
+            background-color: #f7fafc;
+        }
+    </style>
 </head>
-<body>
-    <header class="header">
-        <div class="logo">
-            <h1>Kitchen Assistant</h1>
-        </div>
-    </header>
-
-    <main class="container">
-        <section class="search-container">
-            <form class="search-box" id="search-form">
-                <input type="text" class="search-input" id="search-input" placeholder="Search recipes...">
-                <button type="button" class="voice-input-button" id="voice-search-btn">
-                    <i class="icon">🎤</i>
+<body class="h-full">
+    <div class="min-h-full">
+        <!-- Mobile Navigation -->
+        <nav class="mobile-only bg-white shadow-md fixed w-full z-50">
+            <div class="flex items-center justify-between px-4 py-3">
+                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
+                <button id="mobile-menu-button" class="p-2">
+                    <i class="fas fa-bars text-gray-500"></i>
                 </button>
-                <button type="submit" class="search-button">Search</button>
-            </form>
-            <div class="filter-tags" id="filters">
-                <!-- Tags will be populated dynamically -->
-                <span class="filter-tag" data-tag="vegetarian">Vegetarian</span>
-                <span class="filter-tag" data-tag="quick">Quick</span>
-                <span class="filter-tag" data-tag="healthy">Healthy</span>
-                <span class="filter-tag" data-tag="pasta">Pasta</span>
-                <span class="filter-tag" data-tag="asian">Asian</span>
             </div>
-        </section>
+        </nav>
 
-        <div class="app-layout">
-            <section class="sidebar" id="recipe-list">
-                <div id="recipes-loading" class="loading">Loading recipes...</div>
-                <div id="recipes-content" class="recipe-list">
-                    <!-- Recipe list items will be populated dynamically -->
+        <!-- Desktop Navigation -->
+        <nav class="desktop-only bg-white shadow-md fixed w-full z-50">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
+                <div class="flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Recipes</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Assistant</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="mobile-only fixed inset-0 bg-white z-40 transform transition-transform duration-300 translate-x-full">
+            <div class="px-4 py-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+                    <button id="close-mobile-menu" class="p-2">
+                        <i class="fas fa-times text-gray-500"></i>
+                    </button>
+                </div>
+                <nav class="space-y-4">
+                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-utensils mr-2"></i> Recipes
+                    </a>
+                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-robot mr-2"></i> Assistant
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="mt-16 md:mt-16">
+            <!-- Hero Section -->
+            <section class="container mx-auto px-4 py-8 mb-12">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Welcome to Kitchen Assistant</h2>
+                        <p class="text-gray-600 mb-6">Find your next culinary adventure with our curated collection of recipes and expert cooking assistance.</p>
+                        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                            <input type="text" 
+                                   id="search-input" 
+                                   placeholder="Search recipes..." 
+                                   class="flex-1 px-6 py-4 rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
+                            <button type="submit" class="px-8 py-4 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors duration-200">
+                                Search
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <section class="main-content" id="recipe-detail">
-                <div id="recipe-placeholder">
-                    <p>Select a recipe to view details</p>
+            <!-- Recipe Categories -->
+            <section class="container mx-auto px-4 py-8">
+                <div class="max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Popular Categories</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                            <i class="fas fa-leaf mr-2"></i> Vegetarian
+                        </button>
+                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                            <i class="fas fa-clock mr-2"></i> Quick
+                        </button>
+                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                            <i class="fas fa-heart mr-2"></i> Healthy
+                        </button>
+                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                            <i class="fas fa-pasta mr-2"></i> Pasta
+                        </button>
+                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
+                            <i class="fas fa-bowl-rice mr-2"></i> Asian
+                        </button>
+                    </div>
                 </div>
-                <div id="recipe-content" class="recipe-detail hidden">
-                    <div class="recipe-header">
-                        <div class="recipe-title">
-                            <h2 id="detail-title"></h2>
+            </section>
+
+            <!-- Recipe Grid -->
+            <section class="container mx-auto px-4 py-8">
+                <div id="recipes-loading" class="flex items-center justify-center py-16 text-gray-500">Loading recipes...</div>
+                <div id="recipes-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Recipe cards will be populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Recipe Detail -->
+            <section id="recipe-detail" class="container mx-auto px-4 py-8 hidden">
+                <div class="bg-white rounded-2xl shadow-xl p-8">
+                    <div class="flex flex-col md:flex-row md:items-start">
+                        <div class="md:w-1/3">
+                            <div class="recipe-image rounded-2xl overflow-hidden mb-6"></div>
                         </div>
-                    </div>
-                    
-                    <div class="recipe-info">
-                        <div class="info-item">
-                            <span class="label">Cook Time</span>
-                            <span class="value" id="detail-cook-time"></span> minutes
-                        </div>
-                    </div>
-                    
-                    <div class="recipe-content">
-                        <div class="ingredients-section">
-                            <h3>Ingredients</h3>
-                            <ul class="ingredients-list" id="detail-ingredients"></ul>
-                        </div>
-                        
-                        <div class="instructions-section">
-                            <h3>Instructions</h3>
-                            <ol class="instructions-list" id="detail-instructions"></ol>
+                        <div class="md:w-2/3 md:ml-8">
+                            <h2 id="detail-title" class="text-3xl font-bold text-gray-900 mb-4">Recipe Title</h2>
+                            <div class="flex flex-wrap gap-4 mb-6">
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock text-gray-500 mr-2"></i>
+                                    <span id="detail-cook-time" class="text-gray-600">20 minutes</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-utensils text-gray-500 mr-2"></i>
+                                    <span class="text-gray-600">4 servings</span>
+                                </div>
+                            </div>
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Ingredients</h3>
+                                    <ul id="detail-ingredients" class="space-y-3 text-gray-700">
+                                        <!-- Ingredients will be populated dynamically -->
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Instructions</h3>
+                                    <ol id="detail-instructions" class="space-y-4 text-gray-700">
+                                        <!-- Instructions will be populated dynamically -->
+                                    </ol>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
-        </div>
 
-        <section class="assistant-container">
-            <h2>AI Kitchen Assistant</h2>
-            <p>Ask me about cooking techniques, ingredient substitutions, or recipe modifications</p>
-            
-            <div class="assistant-input">
-                <input type="text" class="search-input" id="assistant-prompt" 
-                       placeholder="Example: How can I make this recipe vegetarian?">
-                <button type="button" class="voice-input-button" id="voice-assistant-btn">
-                    <i class="icon">🎤</i>
-                </button>
-                <button type="button" class="search-button" id="assistant-btn">Ask</button>
-            </div>
-            
-            <div id="assistant-loading" class="loading hidden">Thinking...</div>
-            <div id="assistant-response" class="assistant-response hidden"></div>
-        </section>
-    </main>
+            <!-- AI Assistant -->
+            <section class="container mx-auto px-4 py-8" aria-labelledby="assistant-heading" role="region">
+                <div class="bg-white rounded-2xl shadow-xl p-8">
+                    <h2 id="assistant-heading" class="text-2xl font-bold text-gray-900 mb-8">AI Kitchen Assistant</h2>
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-robot mr-2"></i>
+                            <span class="text-sm">Powered by AI</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6">Ask me about cooking techniques, ingredient substitutions, or recipe modifications</p>
+                    
+                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                        <input type="text" 
+                               id="assistant-prompt" 
+                               placeholder="Example: How can I make this recipe vegetarian?" 
+                               class="flex-1 px-6 py-4 rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" aria-label="Assistant prompt">
+                        <button type="button" id="assistant-btn" class="px-8 py-4 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors duration-200" aria-label="Ask assistant">
+                            Ask
+                        </button>
+                        <button type="button" id="voice-assistant-btn" class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors duration-200" aria-label="Voice assistant">
+                            <i class="fas fa-microphone text-gray-500"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Voice feedback element -->
+                    <div id="voice-feedback" class="text-sm text-gray-500 mt-2 hidden" aria-live="polite" aria-atomic="true">
+                        <!-- Voice feedback text will be populated dynamically -->
+                    </div>
+                    
+                    <!-- Loading state -->
+                    <div id="assistant-loading" class="flex items-center justify-center py-8 text-gray-500 hidden" aria-label="Loading assistant response" role="alert">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <span class="ml-3">Thinking...</span>
+                    </div>
+                    
+                    <!-- Response area -->
+                    <!-- Response area -->
+                    <div id="assistant-response" class="text-gray-700 mt-6 hidden prose prose-sm sm:prose lg:prose-lg" aria-label="Assistant response">
+                    </div>
+            </section>
+        </main>
+    </div>
 
     <script>
-        // JavaScript functionality will be loaded from an external file
-        document.addEventListener('DOMContentLoaded', function() {
-            // Placeholder for dynamic loading of JavaScript
-            const script = document.createElement('script');
-            script.src = '/static/js/main.js';
-            document.body.appendChild(script);
+        // Mobile menu functionality
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const closeMobileMenu = document.getElementById('close-mobile-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.style.transform = 'translateX(0)';
+        });
+
+        closeMobileMenu.addEventListener('click', () => {
+            mobileMenu.style.transform = 'translateX(100%)';
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                mobileMenu.style.transform = 'translateX(100%)';
+            }
         });
     </script>
+
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
-

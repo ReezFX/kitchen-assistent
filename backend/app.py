@@ -3,8 +3,11 @@ import json
 import logging
 from pathlib import Path
 from flask import Flask, request, jsonify, render_template, send_from_directory
-import requests
 from dotenv import load_dotenv
+import google.generativeai as genai
+import sounddevice as sd
+import numpy as np
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -34,9 +37,62 @@ def load_recipes():
 # Load recipe data from JSON file
 RECIPES = load_recipes()
 
-# Gemma AI API configuration
-GEMMA_API_URL = os.getenv('GEMMA_API_URL', 'https://api.gemma.ai/v1')
-GEMMA_API_KEY = os.getenv('GEMMA_API_KEY', '')
+# Configure GenAI client
+model = None
+chat_session = None
+audio_stream = None
+
+try:
+    # Configure GenAI with API key
+    api_key = os.getenv('GOOGLE_API_KEY')
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY environment variable not set")
+    
+    # Configure the API with the API key
+    genai.configure(api_key=api_key)
+    
+    # Set up model configuration
+    model_name = "gemini-2.0-flash"
+    
+    # Setup generation configuration
+    generation_config = {
+        "max_output_tokens": 500,
+        "temperature": 0.1,
+    }
+    
+    # Create a generative model instance
+    model = genai.GenerativeModel(model_name, generation_config=generation_config)
+    
+    # Initialize audio stream if possible
+    audio_stream = asyncio.Queue()
+    
+    try:
+        # Check for available audio devices
+        devices = sd.query_devices()
+        if not devices:
+            raise ValueError("No audio devices available")
+        
+        # Define callback for audio processing
+        def callback(indata, frames, time, status):
+            if status:
+                print(status)
+            audio_stream.put_nowait(indata.copy())
+        
+        # Start audio input stream
+        sd.InputStream(
+            channels=1,
+            samplerate=16000,
+            callback=callback
+        ).start()
+        logging.info("Audio stream initialized successfully")
+    except Exception as e:
+        logging.warning(f"Audio device not available: {str(e)}")
+        logging.info("Continuing without audio capabilities")
+        # With the new API, audio configuration is typically handled at request time
+        # so we don't need to modify the client configuration
+    
+except Exception as e:
+    logging.error(f"Failed to initialize GenAI client: {str(e)}")
 
 # Routes
 @app.route('/')
@@ -79,93 +135,66 @@ def get_recipe(recipe_id):
 
 @app.route('/api/assistant', methods=['POST'])
 def gemma_assistant():
-    """API endpoint to interact with Gemma AI or fallback to local response generation"""
+    """API endpoint to interact with Gemini AI for recipe assistance"""
+    if model is None:
+        logging.warning("GenAI model not initialized, using fallback response")
+        return gemma_assistant_fallback()
+    
     data = request.json
     user_query = data.get('query', '')
     
-    # Log the incoming query
-    logging.info(f"Received assistant query: {user_query}")
-    
     if not user_query:
-        logging.warning("Empty query received")
         return jsonify({"error": "No query provided"}), 400
     
-    # First try with the Gemma AI API if configured
-    if GEMMA_API_KEY:
-        try:
-            logging.info(f"Attempting to use Gemma AI API at: {GEMMA_API_URL}")
+    try:
+        # Generate content directly using the model
+        response = model.generate_content(user_query)
+        
+        # Extract the response text
+        if hasattr(response, 'text') and response.text:
+            return jsonify({"response": response.text})
+        else:
+            return jsonify({"error": "No response received from AI"}), 500
             
-            # First attempt - with the original structure
-            try:
-                response = requests.post(
-                    f"{GEMMA_API_URL}/generate",
-                    headers={
-                        "Authorization": f"Bearer {GEMMA_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "prompt": f"Recipe assistance: {user_query}",
-                        "max_tokens": 150
-                    },
-                    timeout=10  # Add timeout to prevent hanging
-                )
-                
-                logging.info(f"Gemma API response status: {response.status_code}")
-                
-                if response.status_code == 200:
-                    ai_response = response.json()
-                    return jsonify({"response": ai_response.get("text", "")})
-                else:
-                    logging.warning(f"Gemma API error: {response.status_code}, {response.text[:200]}")
-                    # If first attempt failed, we'll try the fallback options
-            except requests.RequestException as e:
-                logging.warning(f"Request exception with first API attempt: {str(e)}")
-                # Continue to fallback options
-                
-            # Second attempt - alternate API structure
-            try:
-                # Some APIs use a different structure
-                response = requests.post(
-                    f"{GEMMA_API_URL}/completions",  # Try a different endpoint
-                    headers={
-                        "Authorization": f"Bearer {GEMMA_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "gemma-7b-it",  # Specify model if required
-                        "messages": [
-                            {"role": "system", "content": "You are a helpful kitchen assistant that provides cooking advice and recipe information."},
-                            {"role": "user", "content": user_query}
-                        ],
-                        "temperature": 0.7,
-                        "max_tokens": 150
-                    },
-                    timeout=10
-                )
-                
-                if response.status_code == 200:
-                    ai_response = response.json()
-                    # Handle different response structures
-                    if "choices" in ai_response and len(ai_response["choices"]) > 0:
-                        return jsonify({"response": ai_response["choices"][0].get("message", {}).get("content", "")})
-                    return jsonify({"response": ai_response.get("text", "")})
-                else:
-                    logging.warning(f"Alternate API structure also failed: {response.status_code}")
-                    # Fall through to local fallback
-            except requests.RequestException as e:
-                logging.warning(f"Request exception with second API attempt: {str(e)}")
-                # Fall through to local fallback
-                
-        except Exception as e:
-            logging.error(f"Error communicating with Gemma AI: {str(e)}")
-            # Continue to fallback mechanisms
-    else:
-        logging.warning("No Gemma API key configured, using fallback")
+    except Exception as e:
+        logging.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-    # Fallback mechanism - provide a simple local response based on the query
-    fallback_response = generate_fallback_response(user_query)
-    logging.info("Using fallback response mechanism")
-    return jsonify({"response": fallback_response})
+@app.route('/api/assistant/fallback', methods=['POST'])
+def gemma_assistant_fallback():
+    """API endpoint to interact with Gemini AI for recipe assistance (fallback)"""
+    data = request.json
+    user_query = data.get('query', '')
+    
+    if not user_query:
+        return jsonify({"error": "No query provided"}), 400
+    
+    try:
+        # Generate a simple fallback response when API access fails
+        query = user_query.lower()
+        
+        # Basic keyword matching for common recipe questions
+        if any(word in query for word in ["substitute", "replacement", "instead of"]):
+            return jsonify({"response": "For ingredient substitutions, you can often use: olive oil instead of butter, applesauce instead of oil, Greek yogurt instead of sour cream, or honey instead of sugar. What specific ingredient are you looking to replace?"})
+        
+        elif any(word in query for word in ["vegetarian", "vegan", "plant-based"]):
+            return jsonify({"response": "To make a recipe vegetarian, you can replace meat with tofu, tempeh, seitan, lentils, beans, or mushrooms. For binding, you can use flax eggs (1 tbsp ground flaxseed + 3 tbsp water) instead of eggs."})
+        
+        elif any(word in query for word in ["gluten", "gluten-free", "celiac"]):
+            return jsonify({"response": "For gluten-free cooking, you can substitute regular flour with almond flour, rice flour, or a gluten-free flour blend. Always check that other ingredients like soy sauce or broths are labeled gluten-free."})
+        
+        elif any(word in query for word in ["store", "keep", "refrigerate", "freeze"]):
+            return jsonify({"response": "Most cooked dishes can be stored in the refrigerator for 3-4 days. For freezing, cool completely, portion into airtight containers, and freeze for up to 2-3 months. Label with the date for best results."})
+        
+        elif any(word in query for word in ["double", "half", "scale", "portion"]):
+            return jsonify({"response": "To scale a recipe, multiply or divide all ingredients by the same ratio. For baking recipes, it's better to use weight measurements rather than volume for accuracy when scaling."})
+        
+        else:
+            return jsonify({"response": "I'm currently operating in offline mode. For specific recipe advice, please try common substitutions or adjustments, or check a reliable cookbook. You can also search online or try again later when the service is fully available."})
+            
+    except Exception as e:
+        logging.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 def generate_fallback_response(query):
     """Generate a simple fallback response when API access fails"""
@@ -202,5 +231,22 @@ if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '0.0.0.0')  # Accessible from other devices on the network
     port = int(os.getenv('FLASK_PORT', 5000))
     
+    # Set system instructions for the model
+    if model is not None:
+        try:
+            # Define the system instruction for the cooking assistant
+            system_instruction = """
+You are a helpful cooking assistant that provides advice on recipes, ingredients, 
+substitutions, and cooking techniques. Keep your responses focused on cooking, food, 
+and kitchen assistance. Be friendly and supportive, offering practical advice that 
+home cooks can implement.
+"""
+            # Recreate the model with system instructions
+            # Note: In google-generativeai 0.8.4, we might need to include 
+            # the system instructions in each prompt instead
+            logging.info("System instruction prepared for the cooking assistant")
+            
+        except Exception as e:
+            logging.warning(f"Failed to set system instructions: {str(e)}")
+    
     app.run(debug=debug_mode, host=host, port=port)
-

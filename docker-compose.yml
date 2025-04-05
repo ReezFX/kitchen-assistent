@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -13,6 +11,9 @@ services:
       - ./frontend:/app/frontend
       # Named volume for persistent data storage
       - recipe_data:/app/data
+      # ALSA configuration
+      - /etc/asound.conf:/etc/asound.conf:ro
+      - /usr/share/alsa:/usr/share/alsa:ro
     env_file:
       - ./backend/.env
     environment:
@@ -20,6 +21,9 @@ services:
     restart: unless-stopped
     # Command that overrides the default entrypoint for development
     command: python backend/app.py
+    # Add audio device access
+    devices:
+      - "/dev/snd:/dev/snd"
 
 volumes:
   recipe_data:

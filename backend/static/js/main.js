@@ -29,8 +29,12 @@ const elements = {
     voiceAssistantBtn: document.getElementById('voice-assistant-btn'),
     assistantBtn: document.getElementById('assistant-btn'),
     assistantLoading: document.getElementById('assistant-loading'),
-    assistantResponse: document.getElementById('assistant-response')
+    assistantResponse: document.getElementById('assistant-response'),
+    voiceFeedback: document.getElementById('voice-feedback')
 };
+
+// Log element initialization
+console.log('DOM Elements:', elements);
 
 // State management
 const state = {
@@ -38,27 +42,56 @@ const state = {
     selectedRecipeId: null,
     activeFilters: new Set(),
     speechRecognition: null,
-    isVoiceSupported: false
+    isVoiceSupported: false,
+    isListening: false,
+    lastError: null
 };
+
+// Log initial state
+console.log('Initial State:', state);
 
 // Check if speech recognition is supported
 function initSpeechRecognition() {
+    console.log('Initializing speech recognition...');
+    
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        console.log('Speech recognition supported');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         state.speechRecognition = new SpeechRecognition();
         state.speechRecognition.continuous = false;
         state.speechRecognition.interimResults = false;
-        state.speechRecognition.lang = 'en-US'; // Set language
+        state.speechRecognition.lang = 'en-US';
         state.isVoiceSupported = true;
         
         // Add visual indicator for voice buttons
         if (elements.voiceSearchBtn) elements.voiceSearchBtn.classList.add('active');
         if (elements.voiceAssistantBtn) elements.voiceAssistantBtn.classList.add('active');
+        
+        console.log('Speech recognition initialized successfully');
     } else {
         console.log('Speech recognition not supported');
         // Hide voice buttons if not supported
         if (elements.voiceSearchBtn) elements.voiceSearchBtn.style.display = 'none';
         if (elements.voiceAssistantBtn) elements.voiceAssistantBtn.style.display = 'none';
+    }
+}
+
+// Show error message with visual feedback
+function showError(message) {
+    state.lastError = message;
+    elements.assistantResponse.innerHTML = `<p>Error: ${message}</p>`;
+    elements.assistantResponse.classList.remove('hidden');
+    elements.assistantResponse.classList.add('text-red-600');
+    
+    // Log the error to console
+    console.error('UI Error:', message);
+}
+
+// Clear error message
+function clearError() {
+    if (state.lastError) {
+        elements.assistantResponse.classList.remove('text-red-600');
+        state.lastError = null;
     }
 }
 
@@ -81,7 +114,7 @@ async function fetchRecipes(query = '', tag = '') {
         const response = await fetch(url);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error(`HTTP error! Status: ${response.status}\nResponse: ${await response.text()}`);
         }
         
         const data = await response.json();
@@ -90,7 +123,7 @@ async function fetchRecipes(query = '', tag = '') {
         renderRecipeList(data);
     } catch (error) {
         console.error('Error fetching recipes:', error);
-        elements.recipesContent.innerHTML = `<p class="error">Error loading recipes. Please try again.</p>`;
+        elements.recipesContent.innerHTML = `<p class="error">Error loading recipes: ${error.message}</p>`;
     } finally {
         elements.recipesLoading.classList.add('hidden');
     }
@@ -140,7 +173,6 @@ function selectRecipe(recipeId) {
     state.selectedRecipeId = recipeId;
     
     // Highlight the selected recipe in the list
-    // Highlight the selected recipe in the list
     const recipeCards = document.querySelectorAll('.recipe-card');
     recipeCards.forEach(card => {
         if (parseInt(card.dataset.id) === recipeId) {
@@ -149,6 +181,7 @@ function selectRecipe(recipeId) {
             card.classList.remove('active');
         }
     });
+    
     // Find the selected recipe
     const recipe = state.recipes.find(r => r.id === recipeId);
     
@@ -157,33 +190,47 @@ function selectRecipe(recipeId) {
         return;
     }
     
-    // Hide placeholder and show content
-    elements.recipePlaceholder.classList.add('hidden');
-    elements.recipeContent.classList.remove('hidden');
+    // Check if elements exist before using them
+    if (elements.recipePlaceholder) {
+        elements.recipePlaceholder.classList.add('hidden');
+    }
     
-    // Populate recipe details
-    elements.detailTitle.textContent = recipe.name;
-    elements.detailCookTime.textContent = recipe.cook_time;
+    if (elements.recipeContent) {
+        elements.recipeContent.classList.remove('hidden');
+    }
     
+    // Check if detail elements exist before populating
+    if (elements.detailTitle) {
+        elements.detailTitle.textContent = recipe.name;
+    }
+    
+    if (elements.detailCookTime) {
+        elements.detailCookTime.textContent = recipe.cook_time;
+    }
     
     // Ingredients
-    elements.detailIngredients.innerHTML = '';
-    recipe.ingredients.forEach(ingredient => {
-        const li = document.createElement('li');
-        li.className = 'ingredient-item';
-        li.textContent = ingredient;
-        elements.detailIngredients.appendChild(li);
-    });
+    if (elements.detailIngredients) {
+        elements.detailIngredients.innerHTML = '';
+        recipe.ingredients.forEach(ingredient => {
+            const li = document.createElement('li');
+            li.className = 'ingredient-item';
+            li.textContent = ingredient;
+            elements.detailIngredients.appendChild(li);
+        });
+    }
     
     // Instructions
-    elements.detailInstructions.innerHTML = '';
-    recipe.instructions.forEach(instruction => {
-        const li = document.createElement('li');
-        li.className = 'instruction-item';
-        li.textContent = instruction;
-        elements.detailInstructions.appendChild(li);
-    });
+    if (elements.detailInstructions) {
+        elements.detailInstructions.innerHTML = '';
+        recipe.instructions.forEach(instruction => {
+            const li = document.createElement('li');
+            li.className = 'instruction-item';
+            li.textContent = instruction;
+            elements.detailInstructions.appendChild(li);
+        });
+    }
 }
+
 function handleSearch(e) {
     e.preventDefault();
     const query = elements.searchInput.value.trim();
@@ -219,32 +266,128 @@ function toggleFilter(tag) {
 
 // Voice search functionality
 function startVoiceInput(targetInput) {
-    if (!state.isVoiceSupported) return;
+    if (!state.isVoiceSupported) {
+        showError('Voice recognition is not supported in your browser');
+        return;
+    }
     
-    // Show user feedback that we're listening
-    targetInput.placeholder = "Listening...";
+    // Show listening feedback
+    state.isListening = true;
+    elements.voiceFeedback.textContent = 'Listening...';
+    elements.voiceFeedback.classList.remove('hidden');
+    
+    if (elements.voiceAssistantBtn) {
+        elements.voiceAssistantBtn.classList.add('bg-blue-500');
+        elements.voiceAssistantBtn.classList.remove('bg-gray-100');
+        elements.voiceAssistantBtn.style.cursor = 'not-allowed';
+    }
     
     state.speechRecognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         targetInput.value = transcript;
-        targetInput.placeholder = targetInput === elements.searchInput ? 
-            "Search recipes..." : 
-            "Example: How can I make this recipe vegetarian?";
+        elements.voiceFeedback.textContent = 'Processing...';
+        
+        // Reset voice button
+        if (elements.voiceAssistantBtn) {
+            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
+            elements.voiceAssistantBtn.classList.add('bg-gray-100');
+            elements.voiceAssistantBtn.style.cursor = 'pointer';
+        }
         
         // If this was for search, submit the form
         if (targetInput === elements.searchInput) {
             elements.searchForm.dispatchEvent(new Event('submit'));
         }
+        
+        // Reset listening state
+        state.isListening = false;
+        elements.voiceFeedback.classList.add('hidden');
+        clearError();
     };
     
     state.speechRecognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
-        targetInput.placeholder = targetInput === elements.searchInput ? 
-            "Search recipes..." : 
-            "Example: How can I make this recipe vegetarian?";
+        showError('Error with voice recognition. Please try again.');
+        
+        // Reset voice button
+        if (elements.voiceAssistantBtn) {
+            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
+            elements.voiceAssistantBtn.classList.add('bg-gray-100');
+            elements.voiceAssistantBtn.style.cursor = 'pointer';
+        }
+        
+        // Reset listening state
+        state.isListening = false;
+        elements.voiceFeedback.classList.add('hidden');
     };
     
-    state.speechRecognition.start();
+    state.speechRecognition.onend = () => {
+        // Reset voice button
+        if (elements.voiceAssistantBtn) {
+            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
+            elements.voiceAssistantBtn.classList.add('bg-gray-100');
+            elements.voiceAssistantBtn.style.cursor = 'pointer';
+        }
+        
+        // Reset listening state
+        state.isListening = false;
+        elements.voiceFeedback.classList.add('hidden');
+        
+        // If we didn't get any results, show an error
+        if (!state.speechRecognition.result) {
+            showError('No speech detected. Please try speaking louder and clearly.');
+        }
+    };
+    
+    try {
+        state.speechRecognition.start();
+    } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        showError('Error starting voice recognition. Please try again.');
+    }
+}
+
+// Format AI response text to HTML using markdown-it
+function formatAIResponse(text) {
+    if (!text) return '';
+    
+    // Pre-process text to handle indented content better
+    // This ensures indented blocks are properly preserved
+    let processedText = text;
+    
+    // Create markdown-it instance with appropriate options
+    const md = window.markdownit({
+        html: false,        // Disable HTML tags in source
+        breaks: true,       // Convert '\n' in paragraphs into <br>
+        linkify: true,      // Autoconvert URL-like text to links
+        typographer: true,  // Enable some language-neutral replacement + quotes beautification
+        // Add code block highlighting options
+        highlight: function(str, lang) {
+            return ''; // Minimal highlighting
+        }
+    });
+    
+    // Special handling for indented content
+    // This treats indented content as proper lists
+    processedText = processedText.replace(/(\n\s{4,})(.*)/g, function(match, indent, content) {
+        // Convert indented lines to proper list items if they don't start with a list marker
+        if (!content.match(/^[\*\-\+\d\.]/)) {
+            return '\n* ' + content.trim();
+        }
+        return match;
+    });
+    
+    // Special handling for recipe sections
+    // Makes sure sections with bold headers are properly formatted
+    processedText = processedText.replace(/\*\*(.*?)\*\*:(.*?)(?=\n\s*\*\*|$)/gs, function(match, header, content) {
+        return '**' + header + '**:\n' + content.trim() + '\n\n';
+    });
+    
+    // Render the markdown to HTML
+    const html = md.render(processedText);
+    
+    // Return the rendered HTML
+    return html;
 }
 
 // Ask the AI assistant
@@ -252,13 +395,15 @@ async function askAssistant() {
     const query = elements.assistantPrompt.value.trim();
     
     if (!query) {
-        alert('Please enter a question for the assistant');
+        showError('Please enter a question for the assistant');
         return;
     }
     
     try {
+        // Show loading state
         elements.assistantResponse.classList.add('hidden');
         elements.assistantLoading.classList.remove('hidden');
+        clearError();
         
         const response = await fetch('/api/assistant', {
             method: 'POST',
@@ -269,7 +414,7 @@ async function askAssistant() {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error(`HTTP error! Status: ${response.status}\nResponse: ${await response.text()}`);
         }
         
         const data = await response.json();
@@ -278,12 +423,14 @@ async function askAssistant() {
             throw new Error(data.error);
         }
         
-        elements.assistantResponse.textContent = data.response || "I'm not sure how to answer that. Please try a different question.";
+        
+        // Format and show response
+        const responseText = data.response || "I'm not sure how to answer that. Please try a different question.";
+        elements.assistantResponse.innerHTML = formatAIResponse(responseText);
         elements.assistantResponse.classList.remove('hidden');
     } catch (error) {
-        console.error('Assistant error:', error);
-        elements.assistantResponse.textContent = `Error: ${error.message || 'Could not get a response from the assistant'}`;
-        elements.assistantResponse.classList.remove('hidden');
+        console.error('Assistant error details:', error);
+        showError(error.message || 'Could not get a response from the assistant');
     } finally {
         elements.assistantLoading.classList.add('hidden');
     }
@@ -291,26 +438,36 @@ async function askAssistant() {
 
 // Event listeners
 function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
     // Search form
-    elements.searchForm.addEventListener('submit', handleSearch);
+    if (elements.searchForm) {
+        elements.searchForm.addEventListener('submit', handleSearch);
+        console.log('Search form listener set up');
+    }
     
     // Filter tags
-    elements.filterTags.forEach(tag => {
-        tag.addEventListener('click', () => {
-            toggleFilter(tag.getAttribute('data-tag'));
+    if (elements.filterTags) {
+        elements.filterTags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                toggleFilter(tag.getAttribute('data-tag'));
+            });
         });
-    });
+        console.log('Filter tags listeners set up');
+    }
     
     // Voice search
     if (elements.voiceSearchBtn) {
         elements.voiceSearchBtn.addEventListener('click', () => {
             startVoiceInput(elements.searchInput);
         });
+        console.log('Voice search button listener set up');
     }
     
     // Assistant
     if (elements.assistantBtn) {
         elements.assistantBtn.addEventListener('click', askAssistant);
+        console.log('Assistant button listener set up');
     }
     
     // Voice assistant
@@ -318,18 +475,24 @@ function setupEventListeners() {
         elements.voiceAssistantBtn.addEventListener('click', () => {
             startVoiceInput(elements.assistantPrompt);
         });
+        console.log('Voice assistant button listener set up');
     }
     
     // Enter key in assistant prompt
-    elements.assistantPrompt.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            askAssistant();
-        }
-    });
+    if (elements.assistantPrompt) {
+        elements.assistantPrompt.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askAssistant();
+            }
+        });
+        console.log('Assistant prompt keypress listener set up');
+    }
 }
 
 // Initialize the application
 function init() {
+    console.log('Initializing application...');
+    
     // Set up voice recognition if available
     initSpeechRecognition();
     
@@ -338,8 +501,12 @@ function init() {
     
     // Initial data load
     fetchRecipes();
+    
+    console.log('Application initialized');
 }
 
 // Start the application when the DOM is fully loaded
-init();
-
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded');
+    init();
+});

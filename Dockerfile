@@ -4,6 +4,12 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
+# Install system dependencies for PortAudio
+RUN apt-get update && \
+    apt-get install -y libportaudio2 portaudio19-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy requirements first for better caching
 COPY backend/requirements.txt .
 
