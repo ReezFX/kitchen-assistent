@@ -44,7 +44,8 @@ const state = {
     speechRecognition: null,
     isVoiceSupported: false,
     isListening: false,
-    lastError: null
+    lastError: null,
+    translatedRecipes: {} // Cache for translated recipes
 };
 
 // Log initial state
@@ -132,36 +133,38 @@ async function fetchRecipes(query = '', tag = '') {
 // Render the list of recipes
 function renderRecipeList(recipes) {
     if (recipes.length === 0) {
-        elements.recipesContent.innerHTML = '<p class="text-center text-gray-500 my-8">No recipes found. Try a different search.</p>';
+        elements.recipesContent.innerHTML = '<p class="text-center text-gray-500 my-8" data-i18n="recipe_cards.no_recipes">No recipes found. Try a different search.</p>';
         return;
     }
     
     const fragment = document.createDocumentFragment();
     
     recipes.forEach(recipe => {
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'recipe-card-wrapper';
+        
         const recipeCard = document.createElement('div');
-        recipeCard.className = 'recipe-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300';
+        recipeCard.className = 'recipe-card';
         recipeCard.dataset.id = recipe.id;
         
-        // Create a placeholder for the recipe image
-        const imgPlaceholder = Math.floor(Math.random() * 5) + 1; // Random placeholder 1-5
-        
-        const tagsHtml = recipe.tags.map(tag => 
-            `<span class="recipe-tag bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full">${tag}</span>`
-        ).join('');
-        
+        // Create recipe card HTML with improved layout
         recipeCard.innerHTML = `
-            <div class="recipe-image h-48 bg-gray-200 relative overflow-hidden">
+            <div class="recipe-image">
                 <div class="w-full h-full flex items-center justify-center text-gray-400">
-                    <i class="fas fa-utensils text-4xl"></i>
+                    <i class="fas fa-utensils text-3xl"></i>
                 </div>
             </div>
-            <div class="p-4">
-                <h3 class="text-lg font-semibold mb-2 text-gray-900">${recipe.name}</h3>
-                <div class="text-sm text-gray-600 mb-2">
-                    <i class="fas fa-clock mr-1"></i> ${recipe.cook_time || '30 min'}
+            <div class="recipe-content">
+                <h3 class="recipe-title">${recipe.name}</h3>
+                <div class="recipe-time">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span>${recipe.cook_time || '30'} min</span>
                 </div>
-                <div class="recipe-tags flex flex-wrap gap-1 mt-3">${tagsHtml}</div>
+                <div class="recipe-tags">
+                    ${recipe.tags.slice(0, 3).map(tag => 
+                        `<span class="recipe-tag">${tag}</span>`
+                    ).join('')}
+                </div>
             </div>
         `;
         
@@ -169,7 +172,8 @@ function renderRecipeList(recipes) {
             window.location.href = `/recipe/${recipe.id}`;
         });
         
-        fragment.appendChild(recipeCard);
+        cardWrapper.appendChild(recipeCard);
+        fragment.appendChild(cardWrapper);
         
         // Load recipe image after adding the card to fragment
         loadRecipeCardImage(recipeCard, recipe.id);
@@ -505,6 +509,136 @@ function setupEventListeners() {
     }
 }
 
+/**
+ * Handle recipe translation on the detail page
+ * @param {number} recipeId - ID of the recipe to translate 
+ * @param {string} language - Target language for translation
+ */
+async function handleRecipeDetailTranslation(recipeId, language) {
+    if (!recipeId || language === 'en') return;
+    
+    try {
+        console.log(`Handling recipe detail translation for recipe ${recipeId} to ${language}`);
+        
+        // Find the recipe
+        const recipe = state.recipes.find(r => r.id === recipeId);
+        if (!recipe) {
+            // If not in state, try to fetch it
+            try {
+                const response = await fetch(`/api/recipes/${recipeId}`);
+                if (response.ok) {
+                    const fetchedRecipe = await response.json();
+                    // Add to recipes array
+                    state.recipes.push(fetchedRecipe);
+                    // Now translate it
+                    await translateAndUpdateRecipeDetail(fetchedRecipe, language);
+                } else {
+                    console.error(`Could not fetch recipe ${recipeId} for translation`);
+                }
+            } catch (error) {
+                console.error(`Error fetching recipe ${recipeId}:`, error);
+            }
+            return;
+        }
+        
+        // Translate the found recipe
+        await translateAndUpdateRecipeDetail(recipe, language);
+        
+    } catch (error) {
+        console.error(`Error handling recipe detail translation:`, error);
+    }
+}
+
+/**
+ * Translate a recipe and update the detail view
+ * @param {Object} recipe - The recipe object to translate
+ * @param {string} language - The target language 
+ */
+async function translateAndUpdateRecipeDetail(recipe, language) {
+    try {
+        // Translate the recipe
+        const translatedRecipe = await translateRecipe(recipe, language);
+        
+        if (!translatedRecipe) return;
+        
+        // Update the UI with translated content
+        if (elements.detailTitle) {
+            elements.detailTitle.textContent = translatedRecipe.name;
+        }
+        
+        // Ingredients
+        if (elements.detailIngredients) {
+            elements.detailIngredients.innerHTML = '';
+            translatedRecipe.ingredients.forEach(ingredient => {
+                const li = document.createElement('li');
+                li.className = 'ingredient-item';
+                li.textContent = ingredient;
+                elements.detailIngredients.appendChild(li);
+            });
+        }
+        
+        // Instructions
+        if (elements.detailInstructions) {
+            elements.detailInstructions.innerHTML = '';
+            translatedRecipe.instructions.forEach(instruction => {
+                const li = document.createElement('li');
+                li.className = 'instruction-item';
+                li.textContent = instruction;
+                elements.detailInstructions.appendChild(li);
+            });
+        }
+        
+        console.log(`Recipe detail view updated with translated content`);
+    } catch (error) {
+        console.error('Error translating and updating recipe detail:', error);
+    }
+}
+
+/**
+ * Set up translation-related event listeners
+ */
+function setupTranslationEventListeners() {
+    console.log('Setting up translation event listeners...');
+    
+    // Listen for language changes
+    document.addEventListener('languageChanged', async (event) => {
+        console.log('Language changed event received:', event.detail.language);
+        const language = event.detail.language;
+        
+        // If we have recipes loaded, translate them
+        if (state.recipes && state.recipes.length > 0) {
+            await translateRecipeList(state.recipes, language);
+        }
+        
+        // If we're on a recipe detail page
+        if (state.selectedRecipeId) {
+            await handleRecipeDetailTranslation(state.selectedRecipeId, language);
+        }
+    });
+    
+    // Listen for recipe translation requests
+    document.addEventListener('recipeTranslationNeeded', async (event) => {
+        console.log('Recipe translation needed event received:', event.detail);
+        const { recipeId, language } = event.detail;
+        
+        if (recipeId && language) {
+            await handleRecipeDetailTranslation(recipeId, language);
+        }
+    });
+    
+    // Listen for recipe list translation requests
+    document.addEventListener('recipeListTranslationNeeded', async (event) => {
+        console.log('Recipe list translation needed event received:', event.detail);
+        const { language } = event.detail;
+        
+        if (language && state.recipes && state.recipes.length > 0) {
+            await translateRecipeList(state.recipes, language);
+        }
+    });
+    
+    console.log('Translation event listeners set up');
+}
+
 // Initialize the application
 function init() {
     console.log('Initializing application...');
@@ -519,6 +653,124 @@ function init() {
     fetchRecipes();
     
     console.log('Application initialized');
+}
+
+/**
+ * Translate a single recipe
+ * @param {Object} recipe - The recipe to translate
+ * @param {string} language - The target language
+ * @returns {Promise<Object>} - The translated recipe
+ */
+async function translateRecipe(recipe, language) {
+    if (!recipe || !recipe.id || !window.i18n) return recipe;
+    if (language === 'en') return recipe; // No translation needed for English
+    
+    const cacheKey = `${recipe.id}-${language}`;
+    
+    // Check cache first
+    if (state.translatedRecipes[cacheKey]) {
+        console.log(`Using cached translation for recipe ${recipe.id} in ${language}`);
+        return state.translatedRecipes[cacheKey];
+    }
+    
+    try {
+        console.log(`Translating recipe ${recipe.id} to ${language}...`);
+        const translatedRecipe = await window.i18n.getTranslatedRecipe(recipe, language);
+        
+        if (translatedRecipe) {
+            // Cache the translation
+            state.translatedRecipes[cacheKey] = translatedRecipe;
+            return translatedRecipe;
+        }
+    } catch (error) {
+        console.error(`Error translating recipe ${recipe.id}:`, error);
+    }
+    
+    return recipe; // Return original if translation fails
+}
+
+/**
+ * Translate a list of recipes
+ * @param {Array} recipes - Array of recipe objects to translate
+ * @param {string} language - The target language
+ * @returns {Promise<void>} - Promise that resolves when all translations are complete
+ */
+async function translateRecipeList(recipes, language) {
+    if (!recipes || !recipes.length || !window.i18n) {
+        renderRecipeList(recipes);
+        return;
+    }
+    
+    if (language === 'en') {
+        renderRecipeList(recipes);
+        return;
+    }
+    
+    try {
+        console.log(`Translating ${recipes.length} recipes to ${language}...`);
+        
+        // Create a copy of the recipes array to avoid modifying the original
+        const translatedRecipes = [...recipes];
+        
+        // First render the original content to show something quickly
+        renderRecipeList(recipes);
+        
+        // Then translate each recipe and update the display
+        for (let i = 0; i < recipes.length; i++) {
+            const recipe = recipes[i];
+            const translatedRecipe = await translateRecipe(recipe, language);
+            
+            // Update the recipe in the array
+            translatedRecipes[i] = translatedRecipe;
+            
+            // Update any displayed recipe names in the list
+            const recipeCard = document.querySelector(`.recipe-card[data-id="${recipe.id}"]`);
+            if (recipeCard) {
+                const nameElement = recipeCard.querySelector('h3');
+                if (nameElement) {
+                    nameElement.textContent = translatedRecipe.name;
+                }
+            }
+        }
+        
+        // If we're on the recipe detail page and have a recipe selected
+        if (state.selectedRecipeId) {
+            // Update the recipe detail view with the translated content
+            const translatedRecipe = translatedRecipes.find(r => r.id === state.selectedRecipeId);
+            if (translatedRecipe) {
+                // Update the detail view with translated content
+                if (elements.detailTitle) {
+                    elements.detailTitle.textContent = translatedRecipe.name;
+                }
+                
+                if (elements.detailIngredients) {
+                    elements.detailIngredients.innerHTML = '';
+                    translatedRecipe.ingredients.forEach(ingredient => {
+                        const li = document.createElement('li');
+                        li.className = 'ingredient-item';
+                        li.textContent = ingredient;
+                        elements.detailIngredients.appendChild(li);
+                    });
+                }
+                
+                if (elements.detailInstructions) {
+                    elements.detailInstructions.innerHTML = '';
+                    translatedRecipe.instructions.forEach(instruction => {
+                        const li = document.createElement('li');
+                        li.className = 'instruction-item';
+                        li.textContent = instruction;
+                        elements.detailInstructions.appendChild(li);
+                    });
+                }
+            }
+        }
+        
+        console.log(`Successfully translated ${recipes.length} recipes to ${language}`);
+    } catch (error) {
+        console.error('Error translating recipe list:', error);
+        // Ensure we at least show the original content if translation fails
+        renderRecipeList(recipes);
+    }
 }
 
 // Load and display an image for a recipe card

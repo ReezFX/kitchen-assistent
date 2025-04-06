@@ -11,6 +11,7 @@ import google.generativeai as genai
 import sounddevice as sd
 import numpy as np
 import asyncio
+import time
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +43,10 @@ def load_recipes():
 
 # Load recipe data from JSON file
 RECIPES = load_recipes()
+
+# Translation cache - stores translations by recipe_id, language, and content_type
+# Format: { 'recipe_id-language-type': { 'content': translated_content, 'timestamp': time_of_translation } }
+TRANSLATION_CACHE = {}
 
 # Configure GenAI client
 model = None
@@ -454,33 +459,238 @@ def gemma_assistant_fallback():
         logging.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-def generate_fallback_response(query):
-    """Generate a simple fallback response when API access fails"""
-    query = query.lower()
-    
-    # Basic keyword matching for common recipe questions
-    if any(word in query for word in ["substitute", "replacement", "instead of"]):
-        return "For ingredient substitutions, you can often use: olive oil instead of butter, applesauce instead of oil, Greek yogurt instead of sour cream, or honey instead of sugar. What specific ingredient are you looking to replace?"
-    
-    elif any(word in query for word in ["vegetarian", "vegan", "plant-based"]):
-        return "To make a recipe vegetarian, you can replace meat with tofu, tempeh, seitan, lentils, beans, or mushrooms. For binding, you can use flax eggs (1 tbsp ground flaxseed + 3 tbsp water) instead of eggs."
-    
-    elif any(word in query for word in ["gluten", "gluten-free", "celiac"]):
-        return "For gluten-free cooking, you can substitute regular flour with almond flour, rice flour, or a gluten-free flour blend. Always check that other ingredients like soy sauce or broths are labeled gluten-free."
-    
-    elif any(word in query for word in ["store", "keep", "refrigerate", "freeze"]):
-        return "Most cooked dishes can be stored in the refrigerator for 3-4 days. For freezing, cool completely, portion into airtight containers, and freeze for up to 2-3 months. Label with the date for best results."
-    
-    elif any(word in query for word in ["double", "half", "scale", "portion"]):
-        return "To scale a recipe, multiply or divide all ingredients by the same ratio. For baking recipes, it's better to use weight measurements rather than volume for accuracy when scaling."
-    
-    else:
-        return "I'm currently operating in offline mode. For specific recipe advice, please try common substitutions or adjustments, or check a reliable cookbook. You can also search online or try again later when the service is fully available."
+@app.route('/api/assistant/fallback', methods=['POST'])
+def assistant_fallback():
+    """Fallback endpoint for when the main assistant cannot process a request"""
+    try:
+        message = request.json.get('message', '')
+        
+        # Simple hardcoded responses for common queries
+        responses = {
+            'hello': 'Hello! I\'m your kitchen assistant. How can I help you today?',
+            'hi': 'Hi there! Ready to cook something delicious?',
+            'help': 'I can help you find recipes, answer cooking questions, or provide general kitchen advice.'
+        }
+        
+        # Check for simple matches
+        for keyword, response in responses.items():
+            if keyword in message.lower():
+                return jsonify({'response': response})
+        
+        # Default response
+        return jsonify({
+            'response': 'I\'m sorry, I\'m having trouble understanding your request. You could try asking about specific recipes or cooking techniques.'
+        })
+    except Exception as e:
+        logging.error(f"Error in fallback assistant: {str(e)}")
+        return jsonify({'error': 'An error occurred processing your request'}), 500
+
+@app.route('/api/translate-ui', methods=['POST'])
+def translate_ui_elements():
+    """Translate UI elements using Google Generative AI"""
+    try:
+        # Get request data
+        data = request.json
+        if not data or 'elements' not in data or 'target_language' not in data:
+            return jsonify({'error': 'Missing elements or target language'}), 400
+            
+        elements = data['elements']
+        target_language = data['target_language']
+        
+        # Validate request data
+        if not isinstance(elements, dict) or not isinstance(target_language, str):
+            return jsonify({'error': 'Invalid request format'}), 400
+            
+        # Create a cache key for UI translations
+        cache_key = f"ui-{target_language}"
+        
+        # Check the cache first for the entire UI translation set
+        if cache_key in TRANSLATION_CACHE:
+            cache_entry = TRANSLATION_CACHE[cache_key]
+            # Check if cache entry is not too old (less than 7 days for UI elements)
+            if time.time() - cache_entry.get('timestamp', 0) < 604800:  # 7 days
+                # Check if all requested elements are in the cache
+                cached_translations = cache_entry['content']
+                missing_keys = [key for key in elements.keys() if key not in cached_translations]
+                
+                if not missing_keys:
+                    logging.info(f"Using cached UI translations for {target_language}")
+                    return jsonify(cached_translations)
+                
+                # If some elements are missing, we'll translate only those and add them to cache
+                elements_to_translate = {key: elements[key] for key in missing_keys}
+            else:
+                # Cache expired, translate everything
+                elements_to_translate = elements
+        else:
+            # Not in cache, translate everything
+            elements_to_translate = elements
+            
+        # If no elements need translation, return empty dict
+        if not elements_to_translate:
+            return jsonify({})
+            
+        # If translation service is unavailable, return original elements
+        if model is None:
+            return jsonify({key: value for key, value in elements.items()}), 503
+            
+        # Prepare batch translation prompt
+        translation_prompt = f"""
+        Translate the following UI elements from English to {target_language}:
+        
+        {json.dumps(elements_to_translate, indent=2)}
+        
+        Respond with ONLY a JSON object of the same structure with translated values, nothing else.
+        """
+        
+        # Generate translation
+        translation_response = model.generate_content(translation_prompt)
+        
+        try:
+            translation_text = translation_response.text.strip() if hasattr(translation_response, 'text') else "{}"
+            # Clean up response to ensure it's valid JSON
+            translation_text = translation_text.replace('```json', '').replace('```', '').strip()
+            translated_elements = json.loads(translation_text)
+            
+            # Update cache with new translations
+            if cache_key in TRANSLATION_CACHE:
+                # Update existing cache
+                cached_content = TRANSLATION_CACHE[cache_key]['content']
+                cached_content.update(translated_elements)
+                TRANSLATION_CACHE[cache_key] = {
+                    'content': cached_content,
+                    'timestamp': time.time()
+                }
+            else:
+                # Create new cache entry
+                TRANSLATION_CACHE[cache_key] = {
+                    'content': translated_elements,
+                    'timestamp': time.time()
+                }
+                
+            logging.info(f"Successfully translated {len(translated_elements)} UI elements to {target_language}")
+            return jsonify(translated_elements)
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            logging.error(f"Error parsing translated UI elements: {str(e)}")
+            # Return original elements as fallback
+            return jsonify(elements_to_translate)
+            
+    except Exception as e:
+        logging.error(f"Error translating UI elements: {str(e)}")
+        return jsonify({'error': 'An error occurred during translation'}), 500
+
+@app.route('/api/translate-recipe', methods=['POST'])
+def translate_recipe():
+    """Translate recipe content using Google Generative AI"""
+    try:
+        # Get request data
+        data = request.json
+        if not data or 'recipe' not in data or 'target_language' not in data:
+            return jsonify({'error': 'Missing recipe or target language'}), 400
+            
+        recipe = data['recipe']
+        target_language = data['target_language']
+        
+        # Validate request data
+        if not isinstance(recipe, dict) or not isinstance(target_language, str):
+            return jsonify({'error': 'Invalid request format'}), 400
+            
+        # Create a cache key for this translation
+        recipe_id = recipe.get('id')
+        if not recipe_id:
+            return jsonify({'error': 'Recipe is missing ID'}), 400
+            
+        cache_key = f"{recipe_id}-{target_language}-recipe"
+        
+        # Check the cache first
+        if cache_key in TRANSLATION_CACHE:
+            cache_entry = TRANSLATION_CACHE[cache_key]
+            # Check if cache entry is not too old (less than 24 hours)
+            if time.time() - cache_entry.get('timestamp', 0) < 86400:  # 24 hours
+                logging.info(f"Using cached translation for recipe {recipe_id} to {target_language}")
+                return jsonify(cache_entry['content'])
+        
+        # If not in cache or cache expired, proceed with translation
+        if model is None:
+            return jsonify({'error': 'Translation service unavailable'}), 503
+            
+        # Begin with the name translation
+        name_prompt = f"""
+        Translate this recipe name from English to {target_language}:
+        "{recipe['name']}"
+        
+        Respond with ONLY the translated text, nothing else.
+        """
+        
+        name_response = model.generate_content(name_prompt)
+        translated_name = name_response.text.strip() if hasattr(name_response, 'text') else recipe['name']
+        
+        # Translate ingredients
+        ingredients_prompt = f"""
+        Translate these cooking ingredients from English to {target_language}:
+        
+        {json.dumps(recipe['ingredients'])}
+        
+        Respond with ONLY a JSON array of translated ingredients, nothing else.
+        """
+        
+        ingredients_response = model.generate_content(ingredients_prompt)
+        try:
+            ingredients_text = ingredients_response.text.strip() if hasattr(ingredients_response, 'text') else "[]"
+            # Clean up response to ensure it's a valid JSON array
+            ingredients_text = ingredients_text.replace('```json', '').replace('```', '').strip()
+            translated_ingredients = json.loads(ingredients_text)
+        except (json.JSONDecodeError, ValueError) as e:
+            logging.error(f"Error parsing translated ingredients: {str(e)}")
+            translated_ingredients = recipe['ingredients']
+        
+        # Translate instructions
+        instructions_prompt = f"""
+        Translate these cooking instructions from English to {target_language}:
+        
+        {json.dumps(recipe['instructions'])}
+        
+        Respond with ONLY a JSON array of translated instructions, nothing else.
+        """
+        
+        instructions_response = model.generate_content(instructions_prompt)
+        try:
+            instructions_text = instructions_response.text.strip() if hasattr(instructions_response, 'text') else "[]"
+            # Clean up response to ensure it's a valid JSON array
+            instructions_text = instructions_text.replace('```json', '').replace('```', '').strip()
+            translated_instructions = json.loads(instructions_text)
+        except (json.JSONDecodeError, ValueError) as e:
+            logging.error(f"Error parsing translated instructions: {str(e)}")
+            translated_instructions = recipe['instructions']
+        
+        # Compile the translated recipe
+        translated_recipe = {
+            'id': recipe_id,
+            'name': translated_name,
+            'ingredients': translated_ingredients,
+            'instructions': translated_instructions,
+            'cook_time': recipe.get('cook_time'),
+            'tags': recipe.get('tags', [])
+        }
+        
+        # Cache the translation
+        TRANSLATION_CACHE[cache_key] = {
+            'content': translated_recipe,
+            'timestamp': time.time()
+        }
+        
+        logging.info(f"Successfully translated recipe {recipe_id} to {target_language}")
+        return jsonify(translated_recipe)
+        
+    except Exception as e:
+        logging.error(f"Error translating recipe: {str(e)}")
+        return jsonify({'error': 'An error occurred during translation'}), 500
 
 # For development purposes, we need to serve the frontend files
 @app.route('/frontend/<path:path>')
-def serve_frontend(path):
-    """Serve frontend files during development"""
+def send_frontend(path):
+    """Serve frontend static files"""
     return send_from_directory('../frontend', path)
 
 if __name__ == '__main__':

@@ -1,380 +1,211 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kitchen Assistant</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
-    <style>
-        /* Markdown styling */
-        #assistant-response {
-                <nav class="space-y-4">
-                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
-                        <i class="fas fa-utensils mr-2"></i> Recipes
-                    </a>
-                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
-                        <i class="fas fa-robot mr-2"></i> Assistant
-                    </a>
-                    <div class="px-4 py-2">
-                        <span class="block text-sm text-gray-500 mb-2">Language</span>
-                        <div class="language-toggle-mobile flex rounded-lg overflow-hidden border border-gray-200 w-max">
-                            <button id="lang-en-mobile" data-language="en" class="px-3 py-1 text-sm font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
-                            <button id="lang-de-mobile" data-language="de" class="px-3 py-1 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
-                        </div>
-                    </div>
-                </nav>
-  <div class="flex items-center justify-between px-6 py-4">
-                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
-                <div class="flex items-center space-x-8">
-                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Recipes</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Assistant</a>
-                    <div class="language-toggle flex rounded-lg overflow-hidden border border-gray-200">
-                        <button id="lang-en" data-language="en" class="px-3 py-1 text-sm font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
-                        <button id="lang-de" data-language="de" class="px-3 py-1 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
-                    </div>
-                </div>
-            </div>
-        
-        #assistant-response p {
-            margin-bottom: 1rem;
-        }
-        
-        #assistant-response ul, 
-        #assistant-response ol {
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        #assistant-response ul { list-style-type: disc; }
-        #assistant-response ol { list-style-type: decimal; }
-        
-        #assistant-response li {
-            margin-bottom: 0.25rem;
-        }
-        
-        #assistant-response strong {
-            font-weight: 600;
-        }
-        
-        #assistant-response em {
-            font-style: italic;
-        }
-        
-        #assistant-response blockquote {
-            border-left: 4px solid #e2e8f0;
-            padding-left: 1rem;
-            margin-left: 0;
-            margin-right: 0;
-            font-style: italic;
-            color: #4a5568;
-        }
-        
-        #assistant-response code {
-            font-family: monospace;
-            background-color: #f7fafc;
-            padding: 0.1rem 0.25rem;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
-        }
-        
-        #assistant-response pre {
-            background-color: #f7fafc;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            margin-bottom: 1rem;
-        }
-        
-        #assistant-response pre code {
-            background-color: transparent;
-            padding: 0;
-        }
-        
-        #assistant-response a {
-            color: #3182ce;
-            text-decoration: underline;
-        }
-        
-        #assistant-response table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-        
-        #assistant-response th, 
-        #assistant-response td {
-            border: 1px solid #e2e8f0;
-            padding: 0.5rem;
-            text-align: left;
-        }
-        
-        #assistant-response th {
-            background-color: #f7fafc;
-        }
-
-        /* Recipe card styling */
-        .recipe-card {
-            cursor: pointer;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s;
-        }
-
-        .recipe-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .recipe-card.active {
-            border: 2px solid #3b82f6;
-        }
-
-        .recipe-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .recipe-image::before {
-            content: '';
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        .recipe-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .recipe-tag {
-            border-radius: 9999px;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-
-        #recipes-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-    </style>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 </head>
 <body class="h-full">
-    <div class="min-h-full">
-        <!-- Mobile Navigation -->
-        <nav class="mobile-only bg-white shadow-md fixed w-full z-50">
-            <div class="flex items-center justify-between px-4 py-3">
-                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
-                <div class="flex items-center">
-                    <div class="language-toggle-mobile flex rounded-lg overflow-hidden border border-gray-200 mr-2">
-                        <button id="lang-en-mobile-top" data-language="en" class="px-2 py-1 text-xs font-medium bg-blue-500 text-white transition-colors duration-200">EN</button>
-                        <button id="lang-de-mobile-top" data-language="de" class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200">DE</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="apple-header">
+            <div class="container mx-auto px-4">
+                <div class="flex items-center justify-between">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-utensils text-xl mr-1" style="color: var(--color-primary);"></i>
+                        <h1 class="text-lg font-bold" data-i18n="general.app_title">Kitchen Assistant</h1>
+                    </a>
+                    
+                    <!-- Desktop Navigation -->
+                    <nav class="hidden md:flex items-center space-x-4">
+                        <a href="#" class="apple-nav-link active" data-i18n="navigation.recipes">Recipes</a>
+                        <div class="language-toggle flex rounded-lg overflow-hidden border border-gray-200 ml-3">
+                            <button id="lang-en-desktop" data-language="en" class="px-2 py-1 text-xs font-medium" style="background-color: var(--color-primary); color: white;">EN</button>
+                            <button id="lang-de-desktop" data-language="de" class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">DE</button>
+                        </div>
+                    </nav>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="md:hidden text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden">
+            <div class="fixed inset-y-0 right-0 max-w-xs w-full bg-white dark:bg-gray-900 z-50 transform transition-transform duration-300 translate-x-full">
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-semibold" data-i18n="navigation.menu">Menu</h2>
+                        <button id="close-mobile-menu" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
                     </div>
-                    <button id="mobile-menu-button" class="p-2">
-                        <i class="fas fa-bars text-gray-500"></i>
-                    </button>
+                    
+                    <nav class="space-y-4">
+                        <a href="#" class="block text-base font-medium text-gray-900 hover:text-primary" data-i18n="navigation.recipes">Recipes</a>
+                        
+                        <div class="pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-500 mb-2" data-i18n="navigation.language">Language</p>
+                            <div class="language-toggle-mobile flex rounded-lg overflow-hidden border border-gray-200 w-max">
+                                <button id="lang-en-mobile" data-language="en" class="px-2 py-1 text-xs font-medium" style="background-color: var(--color-primary); color: white;">EN</button>
+                                <button id="lang-de-mobile" data-language="de" class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">DE</button>
+                            </div>
+                        </div>
+                    </nav>
                 </div>
-            </div>
-        </nav>
-
-        <!-- Desktop Navigation -->
-        <nav class="desktop-only bg-white shadow-md fixed w-full z-50">
-            <div class="flex items-center justify-between px-6 py-4">
-                <h1 class="text-xl font-bold text-gray-900">Kitchen Assistant</h1>
-                <div class="flex space-x-8">
-                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Recipes</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900 transition-colors duration-200">Assistant</a>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="mobile-only fixed inset-0 bg-white z-40 transform transition-transform duration-300 translate-x-full">
-            <div class="px-4 py-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-900">Menu</h2>
-                    <button id="close-mobile-menu" class="p-2">
-                        <i class="fas fa-times text-gray-500"></i>
-                    </button>
-                </div>
-                <nav class="space-y-4">
-                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
-                        <i class="fas fa-utensils mr-2"></i> Recipes
-                    </a>
-                    <a href="#" class="block px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center">
-                        <i class="fas fa-robot mr-2"></i> Assistant
-                    </a>
-                </nav>
             </div>
         </div>
 
         <!-- Main Content -->
-        <main class="mt-16 md:mt-16">
-            <!-- Hero Section -->
-            <section class="container mx-auto px-4 py-8 mb-12">
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Welcome to Kitchen Assistant</h2>
-                        <p class="text-gray-600 mb-6">Find your next culinary adventure with our curated collection of recipes and expert cooking assistance.</p>
-                        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                            <input type="text" 
-                                   id="search-input" 
-                                   placeholder="Search recipes..." 
-                                   class="flex-1 px-6 py-4 rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none">
-                            <button type="submit" class="px-8 py-4 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors duration-200">
-                                Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recipe Categories -->
-            <section class="container mx-auto px-4 py-8">
-                <div class="max-w-4xl mx-auto">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Popular Categories</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                            <i class="fas fa-leaf mr-2"></i> Vegetarian
-                        </button>
-                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                            <i class="fas fa-clock mr-2"></i> Quick
-                        </button>
-                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                            <i class="fas fa-heart mr-2"></i> Healthy
-                        </button>
-                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                            <i class="fas fa-pasta mr-2"></i> Pasta
-                        </button>
-                        <button class="filter-tag bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200">
-                            <i class="fas fa-bowl-rice mr-2"></i> Asian
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recipe Grid -->
-            <section class="container mx-auto px-4 py-8">
-                <div id="recipes-loading" class="flex items-center justify-center py-16 text-gray-500">Loading recipes...</div>
-                <div id="recipes-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Recipe cards will be populated dynamically -->
-                </div>
-            </section>
-
-            <!-- Recipe Detail -->
-            <section id="recipe-detail" class="container mx-auto px-4 py-8 hidden">
-                <div class="bg-white rounded-2xl shadow-xl p-8">
-                    <div class="flex flex-col md:flex-row md:items-start">
-                        <div class="md:w-1/3">
-                            <div class="recipe-image rounded-2xl overflow-hidden mb-6"></div>
-                        </div>
-                        <div class="md:w-2/3 md:ml-8">
-                            <h2 id="detail-title" class="text-3xl font-bold text-gray-900 mb-4">Recipe Title</h2>
-                            <div class="flex flex-wrap gap-4 mb-6">
-                                <div class="flex items-center">
-                                    <i class="fas fa-clock text-gray-500 mr-2"></i>
-                                    <span id="detail-cook-time" class="text-gray-600">20 minutes</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-utensils text-gray-500 mr-2"></i>
-                                    <span class="text-gray-600">4 servings</span>
-                                </div>
-                            </div>
-                            <div class="space-y-8">
-                                <div>
-                                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Ingredients</h3>
-                                    <ul id="detail-ingredients" class="space-y-3 text-gray-700">
-                                        <!-- Ingredients will be populated dynamically -->
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Instructions</h3>
-                                    <ol id="detail-instructions" class="space-y-4 text-gray-700">
-                                        <!-- Instructions will be populated dynamically -->
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- AI Assistant -->
-            <section class="container mx-auto px-4 py-8" aria-labelledby="assistant-heading" role="region">
-                <div class="bg-white rounded-2xl shadow-xl p-8">
-                    <h2 id="assistant-heading" class="text-2xl font-bold text-gray-900 mb-8">AI Kitchen Assistant</h2>
-                    <div class="flex items-center justify-between mb-8">
-                        <div class="flex items-center text-gray-600">
-                            <i class="fas fa-robot mr-2"></i>
-                            <span class="text-sm">Powered by AI</span>
-                        </div>
-                    </div>
-                    <p class="text-gray-600 mb-6">Ask me about cooking techniques, ingredient substitutions, or recipe modifications</p>
+        <main class="flex-grow pt-6 pb-20">
+            <!-- Combined Hero + Search Section -->
+            <section class="container mx-auto px-4 mb-8 section-gap">
+                <div class="max-w-4xl mx-auto apple-card p-5">
+                    <h2 class="text-xl font-bold mb-3" data-i18n="home.welcome_title">Welcome to Kitchen Assistant</h2>
+                    <p class="text-gray-600 mb-4" data-i18n="home.welcome_text">Find your next culinary adventure with our curated collection of recipes.</p>
                     
-                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                         <input type="text" 
-                               id="assistant-prompt" 
-                               placeholder="Example: How can I make this recipe vegetarian?" 
-                               class="flex-1 px-6 py-4 rounded-2xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none" aria-label="Assistant prompt">
-                        <button type="button" id="assistant-btn" class="px-8 py-4 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors duration-200" aria-label="Ask assistant">
-                            Ask
-                        </button>
-                        <button type="button" id="voice-assistant-btn" class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors duration-200" aria-label="Voice assistant">
-                            <i class="fas fa-microphone text-gray-500"></i>
+                               id="search-input" 
+                               data-i18n-placeholder="home.search_placeholder"
+                               placeholder="Search recipes..." 
+                               class="apple-input flex-1">
+                        <button type="submit" class="btn btn-primary" data-i18n="home.search_button">
+                            Search
                         </button>
                     </div>
-                    
-                    <!-- Voice feedback element -->
-                    <div id="voice-feedback" class="text-sm text-gray-500 mt-2 hidden" aria-live="polite" aria-atomic="true">
-                        <!-- Voice feedback text will be populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Recipe Grid with Search & Filters Combined -->
+            <section class="container mx-auto px-4 section-gap">
+                <div class="recipes-container">
+                    <!-- Left Side: Filters Panel -->
+                    <div class="filters-panel">
+                        <h3 class="section-title">Filters</h3>
+                        <div class="filter-group">
+                            <span class="filter-label">Dietary:</span>
+                            <div class="filter-options">
+                                <button class="recipe-tag filter-tag" data-tag="vegetarian">Vegetarian</button>
+                                <button class="recipe-tag filter-tag" data-tag="vegan">Vegan</button>
+                                <button class="recipe-tag filter-tag" data-tag="gluten-free">Gluten-Free</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Cuisine:</span>
+                            <div class="filter-options">
+                                <button class="recipe-tag filter-tag" data-tag="italian">Italian</button>
+                                <button class="recipe-tag filter-tag" data-tag="asian">Asian</button>
+                                <button class="recipe-tag filter-tag" data-tag="mexican">Mexican</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Meal Type:</span>
+                            <div class="filter-options">
+                                <button class="recipe-tag filter-tag" data-tag="breakfast">Breakfast</button>
+                                <button class="recipe-tag filter-tag" data-tag="dessert">Dessert</button>
+                                <button class="recipe-tag filter-tag" data-tag="dinner">Dinner</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Time:</span>
+                            <div class="filter-options">
+                                <button class="recipe-tag filter-tag" data-tag="quick">Quick (<30 min)</button>
+                                <button class="recipe-tag filter-tag" data-tag="medium">Medium (30-60 min)</button>
+                            </div>
+                        </div>
                     </div>
                     
-                    <!-- Loading state -->
-                    <div id="assistant-loading" class="flex items-center justify-center py-8 text-gray-500 hidden" aria-label="Loading assistant response" role="alert">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                        <span class="ml-3">Thinking...</span>
+                    <!-- Right Side: Recipe Content -->
+                    <div class="recipes-main">
+                        <h2 class="section-title">Recipe Collection</h2>
+                        
+                        <!-- Loading State -->
+                        <div id="recipes-loading" class="flex justify-center py-5">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2" style="border-color: var(--color-primary);"></div>
+                        </div>
+                        
+                        <!-- Recipe Grid -->
+                        <div id="recipes-content" class="recipes-grid">
+                            <!-- Recipe cards will be generated here -->
+                        </div>
                     </div>
-                    
-                    <!-- Response area -->
-                    <!-- Response area -->
-                    <div id="assistant-response" class="text-gray-700 mt-6 hidden prose prose-sm sm:prose lg:prose-lg" aria-label="Assistant response">
-                    </div>
+                </div>
             </section>
         </main>
+
+        <!-- Mobile Navigation Bar -->
+        <nav class="mobile-nav md:hidden">
+            <a href="#" class="mobile-nav-item active">
+                <i class="fas fa-utensils"></i>
+                <span data-i18n="navigation.recipes">Recipes</span>
+            </a>
+            <a href="#" class="mobile-nav-item">
+                <i class="fas fa-search"></i>
+                <span data-i18n="navigation.search">Search</span>
+            </a>
+            <a href="#" class="mobile-nav-item">
+                <i class="fas fa-filter"></i>
+                <span data-i18n="navigation.filters">Filters</span>
+            </a>
+            <button id="mobile-menu-trigger" class="mobile-nav-item">
+                <i class="fas fa-ellipsis-h"></i>
+                <span data-i18n="navigation.more">More</span>
+            </button>
+        </nav>
     </div>
 
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
         // Mobile menu functionality
         const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
         const closeMobileMenu = document.getElementById('close-mobile-menu');
         const mobileMenu = document.getElementById('mobile-menu');
-
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.style.transform = 'translateX(0)';
-        });
-
-        closeMobileMenu.addEventListener('click', () => {
-            mobileMenu.style.transform = 'translateX(100%)';
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
-                mobileMenu.style.transform = 'translateX(100%)';
+        const mobileMenuPanel = mobileMenu.querySelector('div.fixed');
+        
+        function openMobileMenu() {
+            mobileMenu.classList.remove('hidden');
+            setTimeout(() => {
+                mobileMenuPanel.classList.remove('translate-x-full');
+            }, 10);
+        }
+        
+        function closeMobileMenuHandler() {
+            mobileMenuPanel.classList.add('translate-x-full');
+            setTimeout(() => {
+                mobileMenu.classList.add('hidden');
+            }, 300);
+        }
+        
+        mobileMenuButton.addEventListener('click', openMobileMenu);
+        mobileMenuTrigger.addEventListener('click', openMobileMenu);
+        closeMobileMenu.addEventListener('click', closeMobileMenuHandler);
+        mobileMenu.addEventListener('click', (e) => {
+            if (e.target === mobileMenu) {
+                closeMobileMenuHandler();
             }
         });
+        
+        // Activate filter tags
+        const filterTags = document.querySelectorAll('.filter-tag');
+        filterTags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                tag.classList.toggle('active');
+                const activeTag = tag.getAttribute('data-tag');
+                // Call fetch with active filters
+                const searchQuery = document.getElementById('search-input').value;
+                fetchRecipes(searchQuery, activeTag);
+            });
+        });
     </script>
-
-    <script src="/static/js/debug.js"></script>
-    <script src="/static/js/main.js"></script>
 </body>
 </html>

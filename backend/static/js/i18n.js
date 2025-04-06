@@ -8,6 +8,7 @@ const i18n = {
     supportedLanguages: ['en', 'de'],
     currentLanguage: 'en', // Default language
     translations: {}, // Will hold the loaded translations
+    translatedRecipes: {}, // Will hold translated recipe content
     
     /**
      * Initialize the internationalization functionality
@@ -108,6 +109,68 @@ const i18n = {
     },
     
     /**
+     * Get a translated version of a recipe using the Google AI API
+     * @param {Object} recipe - The recipe object to translate
+     * @param {string} language - The target language code (e.g., 'de')
+     * @returns {Promise<Object>} - The translated recipe or null if translation failed
+     */
+    getTranslatedRecipe: async function(recipe, language) {
+        if (!recipe || language === 'en') {
+            return recipe; // Return original if no recipe or already in English
+        }
+        
+        try {
+            console.log(`Translating recipe ${recipe.id} to ${language} using API`);
+            
+            // Create a cache key for this recipe and language
+            const cacheKey = `recipe-${recipe.id}-${language}`;
+            
+            // Check if we have a cached translation
+            if (this.translatedRecipes[cacheKey]) {
+                console.log(`Using cached translation for recipe ${recipe.id}`);
+                return this.translatedRecipes[cacheKey];
+            }
+            
+            // Prepare the recipe data to translate (name, ingredients, instructions)
+            const recipeData = {
+                id: recipe.id,
+                name: recipe.name,
+                ingredients: recipe.ingredients,
+                instructions: recipe.instructions
+            };
+            
+            // Call the backend API to translate the recipe
+            const response = await fetch('/api/translate-recipe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    recipe: recipeData,
+                    target_language: language
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Translation API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const translatedRecipe = await response.json();
+            
+            // Cache the result
+            this.translatedRecipes[cacheKey] = translatedRecipe;
+            
+            console.log(`Successfully translated recipe ${recipe.id} to ${language}`);
+            return translatedRecipe;
+            
+        } catch (error) {
+            console.error('Error translating recipe:', error);
+            // In case of error, return the original recipe
+            return recipe;
+        }
+    },
+    
+    /**
      * Apply translations to the page based on data-i18n attributes
      */
     applyTranslations: function() {
@@ -173,6 +236,9 @@ const i18n = {
         
         // Update UI to reflect language change
         this.updateLanguageToggle();
+
+        // Translate dynamic content using the AI API
+        await this.translatePageUI();
         
         console.log(`Successfully switched to language: ${language}`);
         
@@ -238,6 +304,115 @@ const i18n = {
         });
         
         console.log('Set up language toggle event listeners');
+    },
+    
+    /**
+     * Translate UI elements using the backend API
+     * This is used when static translations are not available
+     * @param {Object} elements - Key-value pairs of elements to translate
+     * @param {string} language - Target language code
+     * @returns {Promise<Object>} - Translated elements
+     */
+    translateUIElements: async function(elements, language) {
+        if (!elements || Object.keys(elements).length === 0 || language === 'en') {
+            return elements; // No need to translate
+        }
+        
+        try {
+            console.log(`Translating ${Object.keys(elements).length} UI elements to ${language}`);
+            
+            // Call the backend API
+            const response = await fetch('/api/translate-ui', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    elements: elements,
+                    target_language: language
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Translation API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const translatedElements = await response.json();
+            console.log(`Successfully translated UI elements to ${language}`);
+            return translatedElements;
+            
+        } catch (error) {
+            console.error('Error translating UI elements:', error);
+            return elements; // Return originals in case of error
+        }
+    },
+    
+    /**
+     * Translate the current page UI using the Google AI API
+     * This is used for dynamic content that isn't covered by standard translations
+     */
+    translatePageUI: async function() {
+        if (this.currentLanguage === 'en') return; // Skip if English
+        
+        try {
+            // Collect all translatable elements that don't have data-i18n attributes
+            // These are typically dynamic elements that aren't covered by static translations
+            const elementsToTranslate = {};
+            
+            // Look for headings without data-i18n
+            document.querySelectorAll('h1:not([data-i18n]), h2:not([data-i18n]), h3:not([data-i18n])').forEach(el => {
+                if (el.textContent.trim()) {
+                    elementsToTranslate[`heading-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
+                }
+            });
+            
+            // Look for paragraphs without data-i18n
+            document.querySelectorAll('p:not([data-i18n])').forEach(el => {
+                if (el.textContent.trim()) {
+                    elementsToTranslate[`paragraph-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
+                }
+            });
+            
+            // Look for buttons without data-i18n
+            document.querySelectorAll('button:not([data-i18n])').forEach(el => {
+                if (el.textContent.trim()) {
+                    elementsToTranslate[`button-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
+                }
+            });
+            
+            // If we found elements to translate
+            if (Object.keys(elementsToTranslate).length > 0) {
+                console.log(`Found ${Object.keys(elementsToTranslate).length} dynamic UI elements to translate`);
+                
+                // Get translations
+                const translations = await this.translateUIElements(elementsToTranslate, this.currentLanguage);
+                
+                // Map of original text to translated text
+                const translationMap = {};
+                for (const key in elementsToTranslate) {
+                    const originalText = elementsToTranslate[key];
+                    const translatedText = translations[key];
+                    if (translatedText && originalText !== translatedText) {
+                        translationMap[originalText] = translatedText;
+                    }
+                }
+                
+                // Apply translations to all matching elements
+                for (const originalText in translationMap) {
+                    const translatedText = translationMap[originalText];
+                    
+                    document.querySelectorAll('h1, h2, h3, p, button, span, a, label').forEach(el => {
+                        if (el.textContent.trim() === originalText) {
+                            el.textContent = translatedText;
+                        }
+                    });
+                }
+                
+                console.log(`Applied dynamic translations to UI elements`);
+            }
+        } catch (error) {
+            console.error('Error translating page UI:', error);
+        }
     }
 };
 
