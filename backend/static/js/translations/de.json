@@ -7,7 +7,12 @@
     "menu": "Menü",
     "recipes": "Rezepte",
     "assistant": "Assistent",
-    "back_to_recipes": "Zurück zu den Rezepten"
+    "back_to_recipes": "Zurück zu den Rezepten",
+    "ingredients": "Zutaten",
+    "more": "Mehr",
+    "language": "Sprache",
+    "filters": "Filter",
+    "search": "Suche"
   },
   "home": {
     "welcome_title": "Willkommen beim Küchenassistenten",
@@ -31,7 +36,8 @@
     "servings": "Portionen"
   },
   "recipe_cards": {
-    "loading_recipes": "Rezepte werden geladen..."
+    "loading_recipes": "Rezepte werden geladen...",
+    "no_recipes": "Keine Rezepte gefunden. Versuchen Sie eine andere Suche."
   },
   "assistant": {
     "title": "KI-Küchenassistent",
@@ -42,7 +48,11 @@
     "thinking": "Denke nach...",
     "voice_not_available": "Spracheingabe ist in dieser Demo nicht verfügbar",
     "listening": "Höre zu...",
-    "processing": "Verarbeite..."
+    "processing": "Verarbeite...",
+    "home_description": "Fragen Sie nach Kochen, Rezepten oder Zutatenersatz.",
+    "recipe_title": "Rezept-Assistent",
+    "recipe_description": "Brauchen Sie Hilfe mit diesem Rezept? Fragen Sie mich nach Zutatenersatz, Kochtechniken oder Anpassungen.",
+    "recipe_placeholder": "Beispiel: Wie kann ich dieses Rezept vegetarisch machen?"
   },
   "errors": {
     "error_loading_recipes": "Fehler beim Laden der Rezepte:",
@@ -56,7 +66,11 @@
     "voice_assistant": "Sprachassistent"
   },
   "recipe_detail": {
-    "recipe_title": "Rezeptdetail - Küchenassistent"
+    "recipe_title": "Rezeptdetail - Küchenassistent",
+    "back_to_recipes": "Zurück zu den Rezepten",
+    "ingredients_title": "Zutaten",
+    "instructions_title": "Anleitung",
+    "servings": "4 Portionen"
   }
 }
 

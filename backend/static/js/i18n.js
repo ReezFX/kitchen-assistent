@@ -23,8 +23,16 @@ const i18n = {
             console.log(`Using saved language preference: ${this.currentLanguage}`);
         }
         
-        // Load translations for the current language
-        await this.loadTranslations(this.currentLanguage);
+        // Load cached translations if available
+        this.loadCachedTranslations();
+        
+        // Load translations from server if needed
+        if (Object.keys(this.translations).length === 0) {
+            await this.loadTranslations(this.currentLanguage);
+        }
+        
+        // Load cached recipe translations if available
+        this.loadCachedRecipeTranslations();
         
         // Apply translations to the page
         this.applyTranslations();
@@ -36,6 +44,64 @@ const i18n = {
         this.setupEventListeners();
         
         console.log(`i18n system initialized with language: ${this.currentLanguage}`);
+    },
+    
+    /**
+     * Load cached translations from localStorage
+     */
+    loadCachedTranslations: function() {
+        try {
+            const cachedTranslations = localStorage.getItem(`translations-${this.currentLanguage}`);
+            if (cachedTranslations) {
+                this.translations = JSON.parse(cachedTranslations);
+                console.log(`Loaded cached translations for ${this.currentLanguage} from localStorage`);
+                return true;
+            }
+        } catch (error) {
+            console.error('Error loading cached translations:', error);
+        }
+        return false;
+    },
+    
+    /**
+     * Load cached recipe translations from localStorage
+     */
+    loadCachedRecipeTranslations: function() {
+        try {
+            const cachedRecipeTranslations = localStorage.getItem(`recipe-translations-${this.currentLanguage}`);
+            if (cachedRecipeTranslations) {
+                this.translatedRecipes = JSON.parse(cachedRecipeTranslations);
+                console.log(`Loaded ${Object.keys(this.translatedRecipes).length} cached recipe translations for ${this.currentLanguage}`);
+                return true;
+            }
+        } catch (error) {
+            console.error('Error loading cached recipe translations:', error);
+        }
+        return false;
+    },
+    
+    /**
+     * Save translations to localStorage
+     */
+    saveTranslationsToCache: function() {
+        try {
+            localStorage.setItem(`translations-${this.currentLanguage}`, JSON.stringify(this.translations));
+            console.log(`Saved translations for ${this.currentLanguage} to localStorage`);
+        } catch (error) {
+            console.error('Error saving translations to cache:', error);
+        }
+    },
+    
+    /**
+     * Save recipe translations to localStorage
+     */
+    saveRecipeTranslationsToCache: function() {
+        try {
+            localStorage.setItem(`recipe-translations-${this.currentLanguage}`, JSON.stringify(this.translatedRecipes));
+            console.log(`Saved ${Object.keys(this.translatedRecipes).length} recipe translations to localStorage`);
+        } catch (error) {
+            console.error('Error saving recipe translations to cache:', error);
+        }
     },
     
     /**
@@ -53,6 +119,9 @@ const i18n = {
             
             const translations = await response.json();
             this.translations = translations;
+            
+            // Cache the translations in localStorage
+            this.saveTranslationsToCache();
             
             console.log(`Successfully loaded translations for ${language}`);
         } catch (error) {
@@ -120,16 +189,16 @@ const i18n = {
         }
         
         try {
-            console.log(`Translating recipe ${recipe.id} to ${language} using API`);
-            
             // Create a cache key for this recipe and language
             const cacheKey = `recipe-${recipe.id}-${language}`;
             
-            // Check if we have a cached translation
+            // Check if we have a cached translation in memory
             if (this.translatedRecipes[cacheKey]) {
-                console.log(`Using cached translation for recipe ${recipe.id}`);
+                console.log(`Using in-memory cached translation for recipe ${recipe.id}`);
                 return this.translatedRecipes[cacheKey];
             }
+            
+            console.log(`Translating recipe ${recipe.id} to ${language} using API`);
             
             // Prepare the recipe data to translate (name, ingredients, instructions)
             const recipeData = {
@@ -157,8 +226,11 @@ const i18n = {
             
             const translatedRecipe = await response.json();
             
-            // Cache the result
+            // Cache the result in memory
             this.translatedRecipes[cacheKey] = translatedRecipe;
+            
+            // Save to localStorage
+            this.saveRecipeTranslationsToCache();
             
             console.log(`Successfully translated recipe ${recipe.id} to ${language}`);
             return translatedRecipe;
@@ -209,7 +281,60 @@ const i18n = {
             }
         });
         
+        // Ensure the AI Assistant elements are translated
+        this.translateAssistantElements();
+        
         console.log('Applied translations to all DOM elements');
+    },
+
+    /**
+     * Specifically translate AI Assistant elements that might be dynamically added
+     */
+    translateAssistantElements: function() {
+        // Assistant title
+        const assistantTitle = document.querySelector('[data-i18n="assistant.recipe_title"]');
+        if (assistantTitle) {
+            const translation = this.getNestedTranslation(this.translations, 'assistant.recipe_title');
+            if (translation) {
+                assistantTitle.textContent = translation;
+            }
+        }
+        
+        // Assistant description
+        const assistantDesc = document.querySelector('[data-i18n="assistant.recipe_description"]');
+        if (assistantDesc) {
+            const translation = this.getNestedTranslation(this.translations, 'assistant.recipe_description');
+            if (translation) {
+                assistantDesc.textContent = translation;
+            }
+        }
+        
+        // Assistant placeholder
+        const assistantInput = document.querySelector('[data-i18n-placeholder="assistant.recipe_placeholder"]');
+        if (assistantInput) {
+            const translation = this.getNestedTranslation(this.translations, 'assistant.recipe_placeholder');
+            if (translation) {
+                assistantInput.placeholder = translation;
+            }
+        }
+        
+        // Assistant button
+        const assistantBtn = document.querySelector('[data-i18n="assistant.ask_button"]');
+        if (assistantBtn) {
+            const translation = this.getNestedTranslation(this.translations, 'assistant.ask_button');
+            if (translation) {
+                assistantBtn.textContent = translation;
+            }
+        }
+        
+        // Thinking text
+        const thinkingText = document.querySelector('[data-i18n="assistant.thinking"]');
+        if (thinkingText) {
+            const translation = this.getNestedTranslation(this.translations, 'assistant.thinking');
+            if (translation) {
+                thinkingText.textContent = translation;
+            }
+        }
     },
     
     /**
@@ -228,8 +353,14 @@ const i18n = {
         this.currentLanguage = language;
         localStorage.setItem('language', language);
         
-        // Load new translations
-        await this.loadTranslations(language);
+        // Try to load from cache first
+        if (!this.loadCachedTranslations()) {
+            // If not in cache, load from server
+            await this.loadTranslations(language);
+        }
+        
+        // Load cached recipe translations if available
+        this.loadCachedRecipeTranslations();
         
         // Apply new translations
         this.applyTranslations();
