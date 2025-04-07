@@ -7,8 +7,9 @@ const i18n = {
     // Properties
     supportedLanguages: ['en', 'de'],
     currentLanguage: 'en', // Default language
-    translations: {}, // Will hold the loaded translations
-    translatedRecipes: {}, // Will hold translated recipe content
+    translations: {}, // Holds static UI translations from JSON
+    translatedRecipes: {}, // Holds translated recipe content (ingredients/instructions)
+    uiTranslationsCache: {}, // Holds dynamically translated UI elements (headings, buttons etc.)
     
     /**
      * Initialize the internationalization functionality
@@ -16,31 +17,33 @@ const i18n = {
     init: async function() {
         console.log('Initializing i18n system...');
         
-        // Try to load saved language preference from localStorage
+        // Load language preference
         const savedLanguage = localStorage.getItem('language');
         if (savedLanguage && this.supportedLanguages.includes(savedLanguage)) {
             this.currentLanguage = savedLanguage;
-            console.log(`Using saved language preference: ${this.currentLanguage}`);
         }
         
-        // Load cached translations if available
-        this.loadCachedTranslations();
+        // Load all caches first
+        this.loadCachedTranslations(); // Static
+        this.loadCachedRecipeTranslations(); // Recipes
+        this.loadCachedUiTranslations(); // Dynamic UI
         
-        // Load translations from server if needed
+        // Load static translations from server if cache was empty/failed
         if (Object.keys(this.translations).length === 0) {
             await this.loadTranslations(this.currentLanguage);
         }
         
-        // Load cached recipe translations if available
-        this.loadCachedRecipeTranslations();
+        // Apply all available translations (static + cached dynamic UI) synchronously
+        const appliedDynamicTexts = this.applyAllAvailableTranslations();
         
-        // Apply translations to the page
-        this.applyTranslations();
-        
-        // Update UI to reflect current language
+        // Update UI toggle early
         this.updateLanguageToggle();
         
-        // Set up event listeners for language toggle buttons
+        // Asynchronously fetch any dynamic translations *not* found in cache
+        // Pass the set of already applied texts to avoid re-translating/re-applying
+        await this.fetchAndApplyMissingUiTranslations(appliedDynamicTexts);
+        
+        // Set up event listeners last
         this.setupEventListeners();
         
         console.log(`i18n system initialized with language: ${this.currentLanguage}`);
@@ -81,6 +84,24 @@ const i18n = {
     },
     
     /**
+     * Load cached dynamic UI translations from localStorage
+     */
+    loadCachedUiTranslations: function() {
+        try {
+            const cachedUiTranslations = localStorage.getItem(`ui-translations-${this.currentLanguage}`);
+            if (cachedUiTranslations) {
+                this.uiTranslationsCache = JSON.parse(cachedUiTranslations);
+                console.log(`Loaded ${Object.keys(this.uiTranslationsCache).length} cached UI translations for ${this.currentLanguage}`);
+                return true;
+            }
+        } catch (error) {
+            console.error('Error loading cached UI translations:', error);
+            this.uiTranslationsCache = {}; // Reset cache on error
+        }
+        return false;
+    },
+    
+    /**
      * Save translations to localStorage
      */
     saveTranslationsToCache: function() {
@@ -101,6 +122,18 @@ const i18n = {
             console.log(`Saved ${Object.keys(this.translatedRecipes).length} recipe translations to localStorage`);
         } catch (error) {
             console.error('Error saving recipe translations to cache:', error);
+        }
+    },
+    
+    /**
+     * Save dynamic UI translations to localStorage
+     */
+    saveUiTranslationsToCache: function() {
+        try {
+            localStorage.setItem(`ui-translations-${this.currentLanguage}`, JSON.stringify(this.uiTranslationsCache));
+            console.log(`Saved ${Object.keys(this.uiTranslationsCache).length} UI translations to localStorage for ${this.currentLanguage}`);
+        } catch (error) {
+            console.error('Error saving UI translations to cache:', error);
         }
     },
     
@@ -243,48 +276,75 @@ const i18n = {
     },
     
     /**
-     * Apply translations to the page based on data-i18n attributes
+     * Apply static translations from the main translations object.
+     * Separated for clarity, called by applyAllAvailableTranslations.
      */
-    applyTranslations: function() {
-        console.log('Applying translations to DOM elements...');
-        
-        // Find all elements with data-i18n attribute
-        const elements = document.querySelectorAll('[data-i18n]');
-        
-        elements.forEach(element => {
+    applyStaticTranslations: function() {
+        console.log('Applying static translations...');
+        // Apply translations based on data-i18n attribute
+        document.querySelectorAll('[data-i18n]').forEach(element => {
             const key = element.getAttribute('data-i18n');
             const translation = this.getNestedTranslation(this.translations, key);
-            
-            // Check if we have a translation for this key
             if (translation !== null && translation !== undefined) {
-                // Handle element types differently
-                if (element.tagName === 'INPUT' && element.type === 'text') {
+                if (element.tagName === 'INPUT' && element.type === 'text' || element.tagName === 'TEXTAREA') {
                     element.placeholder = translation;
                 } else {
                     element.textContent = translation;
                 }
             } else {
-                console.warn(`Missing translation for key: ${key}`);
+                console.warn(`Missing static translation for key: ${key}`);
             }
         });
-        
-        // Also translate all elements with placeholder translations
-        const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
-        placeholders.forEach(element => {
+
+        // Apply translations based on data-i18n-placeholder attribute
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
             const key = element.getAttribute('data-i18n-placeholder');
             const translation = this.getNestedTranslation(this.translations, key);
-            
             if (translation !== null && translation !== undefined) {
                 element.placeholder = translation;
             } else {
-                console.warn(`Missing placeholder translation for key: ${key}`);
+                console.warn(`Missing static placeholder translation for key: ${key}`);
             }
         });
+         // Also translate assistant elements which use static keys
+         this.translateAssistantElements();
+         console.log('Finished applying static translations.');
+    },
+
+    /**
+     * Applies ALL available translations (static + cached dynamic UI) synchronously.
+     * @returns {Set<string>} A set of original text strings for dynamic elements that were translated from the cache.
+     */
+    applyAllAvailableTranslations: function() {
+        console.log('Applying all available translations (static + cached dynamic)...');
+        // Apply static translations first
+        this.applyStaticTranslations();
+
+        // Now apply cached dynamic UI translations
+        const appliedDynamicTexts = new Set();
+        const cachedUi = this.uiTranslationsCache[this.currentLanguage] || {};
         
-        // Ensure the AI Assistant elements are translated
-        this.translateAssistantElements();
-        
-        console.log('Applied translations to all DOM elements');
+        if (Object.keys(cachedUi).length > 0) {
+             console.log(`Applying ${Object.keys(cachedUi).length} cached dynamic UI translations...`);
+             // Find elements potentially needing dynamic translation
+             const potentialElements = document.querySelectorAll('h1:not([data-i18n]), h2:not([data-i18n]), h3:not([data-i18n]), p:not([data-i18n]), button:not([data-i18n]), span:not([data-i18n]), a:not([data-i18n]), label:not([data-i18n])');
+
+             potentialElements.forEach(el => {
+                 const originalText = el.textContent?.trim();
+                 if (originalText && cachedUi[originalText]) {
+                     const translatedText = cachedUi[originalText];
+                     if (translatedText !== originalText) {
+                         el.textContent = translatedText;
+                         appliedDynamicTexts.add(originalText);
+                     }
+                 }
+             });
+             console.log(`Applied cached translations for ${appliedDynamicTexts.size} dynamic text strings.`);
+        } else {
+            console.log('No cached dynamic UI translations to apply.');
+        }
+
+        return appliedDynamicTexts;
     },
 
     /**
@@ -344,36 +404,37 @@ const i18n = {
     switchLanguage: async function(language) {
         console.log(`Switching language to: ${language}`);
         
-        if (!this.supportedLanguages.includes(language)) {
-            console.error(`Language "${language}" is not supported`);
+        if (!this.supportedLanguages.includes(language) || language === this.currentLanguage) {
+             if (language === this.currentLanguage) console.log(`Already in language: ${language}`);
+             else console.error(`Language "${language}" is not supported`);
             return;
         }
         
-        // Save the new language preference
         this.currentLanguage = language;
         localStorage.setItem('language', language);
         
-        // Try to load from cache first
-        if (!this.loadCachedTranslations()) {
-            // If not in cache, load from server
+        // Load caches for new language
+        this.loadCachedTranslations();
+        this.loadCachedRecipeTranslations();
+        this.loadCachedUiTranslations();
+
+        // Load static from server if needed
+        if (Object.keys(this.translations).length === 0) {
             await this.loadTranslations(language);
         }
         
-        // Load cached recipe translations if available
-        this.loadCachedRecipeTranslations();
+        // Apply all available (static + cached dynamic)
+        const appliedDynamicTexts = this.applyAllAvailableTranslations();
         
-        // Apply new translations
-        this.applyTranslations();
-        
-        // Update UI to reflect language change
+        // Update toggle
         this.updateLanguageToggle();
 
-        // Translate dynamic content using the AI API
-        await this.translatePageUI();
+        // Fetch and apply missing dynamic translations
+        await this.fetchAndApplyMissingUiTranslations(appliedDynamicTexts);
         
         console.log(`Successfully switched to language: ${language}`);
         
-        // Dispatch a custom event that other scripts can listen for
+        // Dispatch event
         document.dispatchEvent(new CustomEvent('languageChanged', { 
             detail: { language: language } 
         }));
@@ -479,70 +540,75 @@ const i18n = {
     },
     
     /**
-     * Translate the current page UI using the Google AI API
-     * This is used for dynamic content that isn't covered by standard translations
+     * Fetches translations via API for dynamic UI elements NOT found in cache and applies them.
+     * @param {Set<string>} alreadyAppliedTexts - A set of original texts already translated from cache.
      */
-    translatePageUI: async function() {
+    fetchAndApplyMissingUiTranslations: async function(alreadyAppliedTexts = new Set()) {
         if (this.currentLanguage === 'en') return; // Skip if English
         
+        console.log('Checking for missing dynamic UI translations...');
+        
         try {
-            // Collect all translatable elements that don't have data-i18n attributes
-            // These are typically dynamic elements that aren't covered by static translations
-            const elementsToTranslate = {};
+            // Collect potentially dynamic elements and their texts
+            const textsNeedingApiTranslation = {};
+            const elementMap = new Map(); // Map original text -> [elements]
             
-            // Look for headings without data-i18n
-            document.querySelectorAll('h1:not([data-i18n]), h2:not([data-i18n]), h3:not([data-i18n])').forEach(el => {
-                if (el.textContent.trim()) {
-                    elementsToTranslate[`heading-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
-                }
-            });
-            
-            // Look for paragraphs without data-i18n
-            document.querySelectorAll('p:not([data-i18n])').forEach(el => {
-                if (el.textContent.trim()) {
-                    elementsToTranslate[`paragraph-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
-                }
-            });
-            
-            // Look for buttons without data-i18n
-            document.querySelectorAll('button:not([data-i18n])').forEach(el => {
-                if (el.textContent.trim()) {
-                    elementsToTranslate[`button-${Math.random().toString(36).substr(2, 9)}`] = el.textContent.trim();
-                }
-            });
-            
-            // If we found elements to translate
-            if (Object.keys(elementsToTranslate).length > 0) {
-                console.log(`Found ${Object.keys(elementsToTranslate).length} dynamic UI elements to translate`);
-                
-                // Get translations
-                const translations = await this.translateUIElements(elementsToTranslate, this.currentLanguage);
-                
-                // Map of original text to translated text
-                const translationMap = {};
-                for (const key in elementsToTranslate) {
-                    const originalText = elementsToTranslate[key];
-                    const translatedText = translations[key];
-                    if (translatedText && originalText !== translatedText) {
-                        translationMap[originalText] = translatedText;
+             document.querySelectorAll('h1:not([data-i18n]), h2:not([data-i18n]), h3:not([data-i18n]), p:not([data-i18n]), button:not([data-i18n]), span:not([data-i18n]), a:not([data-i18n]), label:not([data-i18n])').forEach(el => {
+                const text = el.textContent?.trim();
+                // Only consider if text exists AND wasn't already applied from cache
+                if (text && !alreadyAppliedTexts.has(text)) {
+                    // Prepare for API call
+                    if (!textsNeedingApiTranslation[text]) {
+                        textsNeedingApiTranslation[text] = text; 
                     }
+                    // Map elements for applying results later
+                    if (!elementMap.has(text)) {
+                        elementMap.set(text, []);
+                    }
+                    elementMap.get(text).push(el);
                 }
-                
-                // Apply translations to all matching elements
-                for (const originalText in translationMap) {
-                    const translatedText = translationMap[originalText];
-                    
-                    document.querySelectorAll('h1, h2, h3, p, button, span, a, label').forEach(el => {
-                        if (el.textContent.trim() === originalText) {
-                            el.textContent = translatedText;
-                        }
-                    });
-                }
-                
-                console.log(`Applied dynamic translations to UI elements`);
+            });
+
+            // If no texts need API translation, we're done
+            if (Object.keys(textsNeedingApiTranslation).length === 0) {
+                console.log('No missing dynamic UI translations require API call.');
+                return;
             }
+            
+            console.log(`Calling API to translate ${Object.keys(textsNeedingApiTranslation).length} missing UI text strings.`);
+            const apiResults = await this.translateUIElements(textsNeedingApiTranslation, this.currentLanguage);
+            
+            // Process API results: apply translations and update cache
+            let newCacheEntries = false;
+            console.log('Applying newly fetched dynamic UI translations...');
+            for (const originalText in apiResults) {
+                const translatedText = apiResults[originalText];
+                
+                // Apply if translation is valid and different
+                if (translatedText && translatedText !== originalText && elementMap.has(originalText)) {
+                    elementMap.get(originalText).forEach(el => {
+                        el.textContent = translatedText;
+                    });
+
+                    // Update cache
+                    if (!this.uiTranslationsCache[this.currentLanguage]) {
+                        this.uiTranslationsCache[this.currentLanguage] = {};
+                    }
+                    if (this.uiTranslationsCache[this.currentLanguage][originalText] !== translatedText) {
+                        this.uiTranslationsCache[this.currentLanguage][originalText] = translatedText;
+                        newCacheEntries = true;
+                    }
+                } 
+            }
+            
+            // Save updated cache if necessary
+            if (newCacheEntries) {
+                this.saveUiTranslationsToCache();
+            }
+             console.log('Finished applying newly fetched dynamic UI translations.');
+
         } catch (error) {
-            console.error('Error translating page UI:', error);
+            console.error('Error fetching/applying missing page UI translations:', error);
         }
     }
 };
@@ -554,4 +620,5 @@ window.i18n = i18n;
 document.addEventListener('DOMContentLoaded', () => {
     i18n.init();
 });
+
 

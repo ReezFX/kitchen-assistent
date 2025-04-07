@@ -8,11 +8,54 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-style.css') }}">
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <style>
+        .preload {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--color-background);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .preload.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .preload-spinner {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-top-color: var(--color-primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        html.loading {
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
+    <!-- Preloader -->
+    <div class="preload" id="preloader">
+        <div class="preload-spinner"></div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
-        <header class="apple-header">
+        <header class="apple-header animation-ready animate-fade-in">
             <div class="container mx-auto px-4">
                 <div class="flex items-center justify-between">
                     <a href="/" class="flex items-center">
@@ -67,14 +110,14 @@
 
         <main class="flex-grow pt-6 pb-20">
             <!-- Back Navigation -->
-            <div class="container mx-auto px-4 mb-4">
-                <a href="/" class="flex items-center text-gray-600 hover:text-primary transition-colors" data-i18n="recipe_detail.back_to_recipes">
+            <div class="container mx-auto px-4 mb-6 animation-ready animate-slide-right delay-100">
+                <a href="/" class="btn-back" data-i18n="recipe_detail.back_to_recipes">
                     <i class="fas fa-arrow-left mr-2"></i> Back to Recipes
                 </a>
             </div>
             
             <!-- Recipe Detail Header -->
-            <section class="container mx-auto px-4 mb-8">
+            <section class="container mx-auto px-4 mb-8 animation-ready animate-scale-in delay-200">
                 <div class="recipe-detail-header">
                     <div class="recipe-image w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
                         <i class="fas fa-utensils text-5xl"></i>
@@ -95,14 +138,14 @@
                 </div>
                 
                 <!-- Tags -->
-                <div id="detail-tags" class="flex flex-wrap gap-2 my-4"></div>
+                <div id="detail-tags" class="flex flex-wrap gap-2 my-4 animation-ready animate-fade-in delay-300"></div>
             </section>
 
             <!-- Recipe Content - Two Column Layout -->
             <div class="container mx-auto px-4 mb-12 section-gap">
                 <div class="recipe-detail-layout">
                     <!-- Left Column: Ingredients Panel -->
-                    <div class="recipe-ingredients-panel">
+                    <div class="recipe-ingredients-panel animation-ready animate-slide-right delay-400">
                         <div class="apple-card p-5 sticky-panel">
                             <h2 class="recipe-detail-section-title" data-i18n="recipe_detail.ingredients_title">
                                 <i class="fas fa-shopping-basket"></i> Ingredients
@@ -112,7 +155,7 @@
                     </div>
                     
                     <!-- Right Column: Instructions -->
-                    <div class="recipe-instructions-panel">
+                    <div class="recipe-instructions-panel animation-ready animate-slide-up delay-500">
                         <div class="apple-card p-5">
                             <h2 class="recipe-detail-section-title" data-i18n="recipe_detail.instructions_title">
                                 <i class="fas fa-list-ol"></i> Instructions
@@ -124,7 +167,7 @@
             </div>
 
             <!-- AI Assistant for this Recipe -->
-            <section id="assistant-section" class="container mx-auto px-4 mb-16">
+            <section id="assistant-section" class="container mx-auto px-4 mb-16 animation-ready animate-scale-in delay-700">
                 <div class="assistant-container recipe-assistant">
                     <div class="assistant-header">
                         <div class="assistant-icon">
@@ -167,7 +210,7 @@
         </main>
 
         <!-- Mobile Navigation Bar - More compact -->
-        <nav class="mobile-nav md:hidden">
+        <nav class="mobile-nav md:hidden animation-ready animate-slide-up">
             <a href="/" class="mobile-nav-item">
                 <i class="fas fa-utensils"></i>
                 <span data-i18n="navigation.recipes">Recipes</span>
@@ -188,6 +231,9 @@
     </div>
 
     <script>
+        // Add loading class to html to prevent scrolling during load
+        document.documentElement.classList.add('loading');
+        
         // Mobile menu functionality
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
@@ -219,50 +265,198 @@
             }
         });
 
+        // Preload images and resources
+        function preloadResources() {
+            return new Promise((resolve) => {
+                // Simulate preloading of resources
+                setTimeout(() => {
+                    resolve();
+                }, 300);
+            });
+        }
+        
+        // Start animations sequence
+        function startAnimations() {
+            // Hide preloader
+            const preloader = document.getElementById('preloader');
+            preloader.classList.add('fade-out');
+            
+            // Allow scrolling again
+            document.documentElement.classList.remove('loading');
+            
+            // Start animation sequence
+            setTimeout(() => {
+                document.querySelectorAll('.animation-ready').forEach(element => {
+                    element.classList.remove('animation-ready');
+                });
+            }, 100);
+        }
+
         // Fetch and display the recipe details
         document.addEventListener('DOMContentLoaded', async () => {
-            const recipeId = JSON.parse('{{ recipe_id }}');
-            await fetchRecipeDetails(recipeId);
-            loadRecipeImage(recipeId);
-            setupAIAssistant(recipeId);
-            
-            // Listen for language change events to translate recipe
-            document.addEventListener('languageChanged', async (event) => {
-                if (currentRecipe) {
-                    await translateAndDisplayRecipe(currentRecipe, event.detail.language);
+            try {
+                const recipeId = JSON.parse('{{ recipe_id }}');
+                
+                // Fetch recipe data
+                await fetchRecipeDetails(recipeId);
+                
+                // Load recipe image in background
+                const imagePromise = loadRecipeImage(recipeId);
+                
+                // Setup assistant
+                setupAIAssistant(recipeId);
+                
+                // Listen for language change events to translate recipe
+                document.addEventListener('languageChanged', async (event) => {
+                    if (currentRecipe) {
+                        await translateAndDisplayRecipe(currentRecipe, event.detail.language);
+                    }
+                });
+                
+                // Add animation to dynamically loaded elements
+                setupDynamicAnimations();
+                
+                // Preload resources
+                await preloadResources();
+                
+                // Wait for image to load if possible
+                try {
+                    await imagePromise;
+                } catch (error) {
+                    console.log('Image loading error, continuing anyway');
                 }
-            });
+                
+                // Start animations
+                startAnimations();
+                
+            } catch (error) {
+                console.error('Error during page initialization:', error);
+                // Even if there's an error, remove the preloader
+                startAnimations();
+            }
         });
+        
+        // Setup animations for dynamically loaded content
+        function setupDynamicAnimations() {
+            // Observe ingredients container
+            const ingredientsObserver = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes.length) {
+                        const items = document.querySelectorAll('.ingredient-item');
+                        items.forEach((item, index) => {
+                            item.classList.add('animation-ready', 'animate-slide-right');
+                            item.style.animationDelay = `${0.5 + (index * 0.05)}s`;
+                            setTimeout(() => {
+                                item.classList.remove('animation-ready');
+                            }, 100);
+                        });
+                    }
+                });
+            });
+            
+            // Observe instructions container
+            const instructionsObserver = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes.length) {
+                        const items = document.querySelectorAll('.instruction-item');
+                        items.forEach((item, index) => {
+                            item.classList.add('animation-ready', 'animate-slide-up');
+                            item.style.animationDelay = `${0.6 + (index * 0.1)}s`;
+                            setTimeout(() => {
+                                item.classList.remove('animation-ready');
+                            }, 100);
+                        });
+                    }
+                });
+            });
+            
+            // Observe tags container
+            const tagsObserver = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length) {
+                        const tags = document.querySelectorAll('.recipe-tag');
+                        tags.forEach((tag, index) => {
+                            tag.classList.add('animation-ready', 'animate-fade-in');
+                            tag.style.animationDelay = `${0.3 + (index * 0.05)}s`;
+                            setTimeout(() => {
+                                tag.classList.remove('animation-ready');
+                            }, 100);
+                        });
+                    }
+                });
+            });
+            
+            // Start observing
+            if (document.getElementById('detail-ingredients')) {
+                ingredientsObserver.observe(document.getElementById('detail-ingredients'), { childList: true });
+            }
+            
+            if (document.getElementById('detail-instructions')) {
+                instructionsObserver.observe(document.getElementById('detail-instructions'), { childList: true });
+            }
+            
+            if (document.getElementById('detail-tags')) {
+                tagsObserver.observe(document.getElementById('detail-tags'), { childList: true, subtree: true });
+            }
+        }
 
         // Function to load recipe image
         async function loadRecipeImage(recipeId) {
-            try {
-                const response = await fetch(`/api/recipes/${recipeId}/image`);
-                
-                if (!response.ok) {
-                    console.error('Error fetching recipe image');
-                    return;
-                }
-                
-                const data = await response.json();
-                
-                if (data.image_url) {
-                    // Find the image placeholder
-                    const imagePlaceholder = document.querySelector('.recipe-image');
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const response = await fetch(`/api/recipes/${recipeId}/image`);
                     
-                    // Replace placeholder with actual image
-                    if (imagePlaceholder) {
-                        imagePlaceholder.innerHTML = '';
-                        const img = document.createElement('img');
-                        img.src = data.image_url;
-                        img.alt = document.getElementById('detail-title').textContent;
-                        img.className = 'w-full h-full object-cover';
-                        imagePlaceholder.appendChild(img);
+                    if (!response.ok) {
+                        console.error('Error fetching recipe image');
+                        reject('Error fetching recipe image');
+                        return;
                     }
+                    
+                    const data = await response.json();
+                    
+                    if (data.image_url) {
+                        // Find the image placeholder
+                        const imagePlaceholder = document.querySelector('.recipe-image');
+                        
+                        // Replace placeholder with actual image
+                        if (imagePlaceholder) {
+                            imagePlaceholder.innerHTML = '';
+                            const img = document.createElement('img');
+                            img.src = data.image_url;
+                            img.alt = document.getElementById('detail-title').textContent;
+                            img.className = 'w-full h-full object-cover';
+                            img.style.opacity = '0';
+                            imagePlaceholder.appendChild(img);
+                            
+                            // Wait for image to load
+                            img.onload = function() {
+                                // Add loading animation
+                                setTimeout(() => {
+                                    img.style.transition = 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                                    img.style.opacity = '1';
+                                    resolve();
+                                }, 300);
+                            };
+                            
+                            img.onerror = function() {
+                                reject('Image failed to load');
+                            };
+                            
+                            // If image takes too long, resolve anyway after 2 seconds
+                            setTimeout(() => {
+                                resolve();
+                            }, 2000);
+                        } else {
+                            resolve();
+                        }
+                    } else {
+                        resolve();
+                    }
+                } catch (error) {
+                    console.error('Error loading recipe image:', error);
+                    reject(error);
                 }
-            } catch (error) {
-                console.error('Error loading recipe image:', error);
-            }
+            });
         }
         
         // Function to fetch and display recipe details
@@ -373,7 +567,11 @@
                     const data = await response.json();
                     
                     assistantResponse.innerHTML = data.response;
+                    assistantResponse.classList.add('animation-ready', 'animate-fade-in');
                     assistantResponse.classList.remove('hidden');
+                    setTimeout(() => {
+                        assistantResponse.classList.remove('animation-ready');
+                    }, 100);
                 } catch (error) {
                     console.error('Error:', error);
                     assistantResponse.innerHTML = 'Sorry, I had trouble processing your request. Please try again.';

@@ -13,7 +13,7 @@
 <body class="h-full">
     <div class="app-container">
         <!-- Header -->
-        <header class="apple-header">
+        <header class="apple-header animation-ready animate-fade-in">
             <div class="container mx-auto px-4">
                 <div class="flex items-center justify-between">
                     <a href="/" class="flex items-center">
@@ -67,7 +67,7 @@
         <!-- Main Content -->
         <main class="flex-grow pt-6 pb-20">
             <!-- Combined Hero + Search Section -->
-            <section class="container mx-auto px-4 mb-8 section-gap">
+            <section class="container mx-auto px-4 mb-8 section-gap animation-ready animate-slide-up delay-100">
                 <div class="max-w-4xl mx-auto apple-card p-5">
                     <h2 class="text-xl font-bold mb-3" data-i18n="home.welcome_title">Welcome to Kitchen Assistant</h2>
                     <p class="text-gray-600 mb-4" data-i18n="home.welcome_text">Find your next culinary adventure with our curated collection of recipes.</p>
@@ -89,7 +89,7 @@
             <section class="container mx-auto px-4 section-gap">
                 <div class="recipes-container">
                     <!-- Left Side: Filters Panel -->
-                    <div class="filters-panel">
+                    <div class="filters-panel animation-ready animate-slide-right delay-200">
                         <h3 class="section-title">Filters</h3>
                         <div class="filter-group">
                             <span class="filter-label">Dietary:</span>
@@ -125,7 +125,7 @@
                     </div>
                     
                     <!-- Right Side: Recipe Content -->
-                    <div class="recipes-main">
+                    <div class="recipes-main animation-ready animate-scale-in delay-300">
                         <h2 class="section-title">Recipe Collection</h2>
                         
                         <!-- Loading State -->
@@ -143,7 +143,7 @@
         </main>
 
         <!-- Mobile Navigation Bar -->
-        <nav class="mobile-nav md:hidden">
+        <nav class="mobile-nav md:hidden animation-ready animate-slide-up">
             <a href="#" class="mobile-nav-item active">
                 <i class="fas fa-utensils"></i>
                 <span data-i18n="navigation.recipes">Recipes</span>
@@ -205,6 +205,45 @@
                 const searchQuery = document.getElementById('search-input').value;
                 fetchRecipes(searchQuery, activeTag);
             });
+        });
+        
+        // Setup animations
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure all animation-ready elements are initially hidden
+            document.querySelectorAll('.animation-ready').forEach(element => {
+                element.style.opacity = '0';
+            });
+            
+            // Trigger animations when page is fully loaded
+            window.addEventListener('load', () => {
+                // Small delay to ensure everything is ready
+                setTimeout(() => {
+                    document.querySelectorAll('.animation-ready').forEach(element => {
+                        element.classList.remove('animation-ready');
+                    });
+                }, 100);
+            });
+            
+            // Add animation for recipe cards
+            const recipesContent = document.getElementById('recipes-content');
+            if (recipesContent) {
+                const recipesObserver = new MutationObserver(mutations => {
+                    mutations.forEach(mutation => {
+                        if (mutation.addedNodes.length) {
+                            const cards = document.querySelectorAll('.recipe-card-wrapper');
+                            cards.forEach((card, index) => {
+                                card.classList.add('animation-ready', 'animate-slide-up');
+                                card.style.animationDelay = `${0.4 + (index * 0.05)}s`;
+                                setTimeout(() => {
+                                    card.classList.remove('animation-ready');
+                                }, 100);
+                            });
+                        }
+                    });
+                });
+                
+                recipesObserver.observe(recipesContent, { childList: true, subtree: true });
+            }
         });
     </script>
 </body>

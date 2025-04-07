@@ -45,7 +45,10 @@ const state = {
     isVoiceSupported: false,
     isListening: false,
     lastError: null,
-    translatedRecipes: {} // Cache for translated recipes
+    translatedRecipes: {}, // Cache for translated recipes
+    speechSynthesis: window.speechSynthesis,
+    isSpeechSynthesisSupported: !!window.speechSynthesis,
+    isSpeaking: false
 };
 
 // Log initial state
@@ -70,10 +73,24 @@ function initSpeechRecognition() {
         
         console.log('Speech recognition initialized successfully');
     } else {
-        console.log('Speech recognition not supported');
+        console.warn('Speech recognition not supported');
         // Hide voice buttons if not supported
         if (elements.voiceSearchBtn) elements.voiceSearchBtn.style.display = 'none';
         if (elements.voiceAssistantBtn) elements.voiceAssistantBtn.style.display = 'none';
+    }
+}
+
+// Check if speech synthesis is supported
+function initSpeechSynthesis() {
+    console.log('Initializing speech synthesis...');
+    if (state.isSpeechSynthesisSupported) {
+        console.log('Speech synthesis supported');
+        // Pre-load voices if necessary (optional, can improve performance on some browsers)
+        state.speechSynthesis.getVoices(); 
+    } else {
+        console.warn('Speech synthesis not supported');
+        // Optionally, provide feedback to the user that voice output won't work
+        // Maybe disable a 'read aloud' button if one existed
     }
 }
 
@@ -86,6 +103,13 @@ function showError(message) {
     
     // Log the error to console
     console.error('UI Error:', message);
+    
+    // Stop any ongoing speech synthesis on error
+    if (state.isSpeechSynthesisSupported && state.speechSynthesis.speaking) {
+        state.speechSynthesis.cancel();
+        state.isSpeaking = false;
+        // Reset any speaking indicators if used
+    }
 }
 
 // Clear error message
@@ -133,11 +157,12 @@ async function fetchRecipes(query = '', tag = '') {
 // Render the list of recipes
 function renderRecipeList(recipes) {
     if (recipes.length === 0) {
-        elements.recipesContent.innerHTML = '<p class="text-center text-gray-500 my-8" data-i18n="recipe_cards.no_recipes">No recipes found. Try a different search.</p>';
+        elements.recipesContent.innerHTML = '<p class="text-center text-gray-500 my-4 text-sm" data-i18n="recipe_cards.no_recipes">No recipes found. Try a different search.</p>';
         return;
     }
     
     const fragment = document.createDocumentFragment();
+    const cardsToLoadImagesFor = []; // Keep track of cards needing images
     
     recipes.forEach(recipe => {
         const cardWrapper = document.createElement('div');
@@ -147,21 +172,21 @@ function renderRecipeList(recipes) {
         recipeCard.className = 'recipe-card';
         recipeCard.dataset.id = recipe.id;
         
-        // Create recipe card HTML with improved layout
+        // Create recipe card HTML with improved compact layout
         recipeCard.innerHTML = `
             <div class="recipe-image">
                 <div class="w-full h-full flex items-center justify-center text-gray-400">
-                    <i class="fas fa-utensils text-3xl"></i>
+                    <i class="fas fa-utensils text-2xl"></i>
                 </div>
             </div>
             <div class="recipe-content">
                 <h3 class="recipe-title">${recipe.name}</h3>
                 <div class="recipe-time">
-                    <i class="fas fa-clock mr-1"></i>
+                    <i class="fas fa-clock mr-1 text-xs"></i>
                     <span>${recipe.cook_time || '30'} min</span>
                 </div>
                 <div class="recipe-tags">
-                    ${recipe.tags.slice(0, 3).map(tag => 
+                    ${recipe.tags.slice(0, 2).map(tag => 
                         `<span class="recipe-tag">${tag}</span>`
                     ).join('')}
                 </div>
@@ -175,12 +200,17 @@ function renderRecipeList(recipes) {
         cardWrapper.appendChild(recipeCard);
         fragment.appendChild(cardWrapper);
         
-        // Load recipe image after adding the card to fragment
-        loadRecipeCardImage(recipeCard, recipe.id);
+        // Add card and ID to the list for image loading later
+        cardsToLoadImagesFor.push({ cardElement: recipeCard, recipeId: recipe.id });
     });
     
     elements.recipesContent.innerHTML = '';
     elements.recipesContent.appendChild(fragment);
+    
+    // Now that cards are in the DOM, load images
+    cardsToLoadImagesFor.forEach(item => {
+        loadRecipeCardImage(item.cardElement, item.recipeId);
+    });
     
     // If we have recipes but none selected, select the first one
     if (recipes.length > 0 && !state.selectedRecipeId) {
@@ -296,10 +326,12 @@ function startVoiceInput(targetInput) {
     elements.voiceFeedback.textContent = 'Listening...';
     elements.voiceFeedback.classList.remove('hidden');
     
+    // Disable assistant button while listening
     if (elements.voiceAssistantBtn) {
-        elements.voiceAssistantBtn.classList.add('bg-blue-500');
-        elements.voiceAssistantBtn.classList.remove('bg-gray-100');
-        elements.voiceAssistantBtn.style.cursor = 'not-allowed';
+        elements.voiceAssistantBtn.disabled = true; 
+        elements.voiceAssistantBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        // Remove focus style if present
+        elements.voiceAssistantBtn.blur(); 
     }
     
     state.speechRecognition.onresult = (event) => {
@@ -307,11 +339,11 @@ function startVoiceInput(targetInput) {
         targetInput.value = transcript;
         elements.voiceFeedback.textContent = 'Processing...';
         
-        // Reset voice button
+        // Reset voice button state
         if (elements.voiceAssistantBtn) {
-            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
+            elements.voiceAssistantBtn.disabled = false;
+            elements.voiceAssistantBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-blue-500');
             elements.voiceAssistantBtn.classList.add('bg-gray-100');
-            elements.voiceAssistantBtn.style.cursor = 'pointer';
         }
         
         // If this was for search, submit the form
@@ -329,11 +361,11 @@ function startVoiceInput(targetInput) {
         console.error('Speech recognition error', event.error);
         showError('Error with voice recognition. Please try again.');
         
-        // Reset voice button
+        // Reset voice button state
         if (elements.voiceAssistantBtn) {
-            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
-            elements.voiceAssistantBtn.classList.add('bg-gray-100');
-            elements.voiceAssistantBtn.style.cursor = 'pointer';
+             elements.voiceAssistantBtn.disabled = false;
+             elements.voiceAssistantBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-blue-500');
+             elements.voiceAssistantBtn.classList.add('bg-gray-100');
         }
         
         // Reset listening state
@@ -342,11 +374,13 @@ function startVoiceInput(targetInput) {
     };
     
     state.speechRecognition.onend = () => {
-        // Reset voice button
-        if (elements.voiceAssistantBtn) {
-            elements.voiceAssistantBtn.classList.remove('bg-blue-500');
-            elements.voiceAssistantBtn.classList.add('bg-gray-100');
-            elements.voiceAssistantBtn.style.cursor = 'pointer';
+        // Reset voice button state only if not currently processing a result
+        if (!state.speechRecognition.result) { 
+            if (elements.voiceAssistantBtn) {
+                 elements.voiceAssistantBtn.disabled = false;
+                 elements.voiceAssistantBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-blue-500');
+                 elements.voiceAssistantBtn.classList.add('bg-gray-100');
+            }
         }
         
         // Reset listening state
@@ -360,10 +394,20 @@ function startVoiceInput(targetInput) {
     };
     
     try {
+        // Ensure synthesis isn't running
+        if (state.isSpeechSynthesisSupported && state.speechSynthesis.speaking) {
+            state.speechSynthesis.cancel(); 
+        }
         state.speechRecognition.start();
     } catch (error) {
         console.error('Error starting speech recognition:', error);
         showError('Error starting voice recognition. Please try again.');
+        // Ensure button is re-enabled on error
+        if (elements.voiceAssistantBtn) {
+             elements.voiceAssistantBtn.disabled = false;
+             elements.voiceAssistantBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-blue-500');
+             elements.voiceAssistantBtn.classList.add('bg-gray-100');
+        }
     }
 }
 
@@ -448,6 +492,10 @@ async function askAssistant() {
         const responseText = data.response || "I'm not sure how to answer that. Please try a different question.";
         elements.assistantResponse.innerHTML = formatAIResponse(responseText);
         elements.assistantResponse.classList.remove('hidden');
+        
+        // Speak the response if supported
+        speakText(responseText); 
+        
     } catch (error) {
         console.error('Assistant error details:', error);
         showError(error.message || 'Could not get a response from the assistant');
@@ -462,7 +510,11 @@ function setupEventListeners() {
     
     // Search form
     if (elements.searchForm) {
-        elements.searchForm.addEventListener('submit', handleSearch);
+        elements.searchForm.addEventListener('submit', (e) => {
+             handleSearch(e);
+             // Stop any ongoing speech when submitting search
+             stopSpeaking(); 
+        });
         console.log('Search form listener set up');
     }
     
@@ -479,6 +531,7 @@ function setupEventListeners() {
     // Voice search
     if (elements.voiceSearchBtn) {
         elements.voiceSearchBtn.addEventListener('click', () => {
+            stopSpeaking(); // Stop speaking before starting new input
             startVoiceInput(elements.searchInput);
         });
         console.log('Voice search button listener set up');
@@ -493,6 +546,7 @@ function setupEventListeners() {
     // Voice assistant
     if (elements.voiceAssistantBtn) {
         elements.voiceAssistantBtn.addEventListener('click', () => {
+            stopSpeaking(); // Stop speaking before starting new input
             startVoiceInput(elements.assistantPrompt);
         });
         console.log('Voice assistant button listener set up');
@@ -639,18 +693,34 @@ function setupTranslationEventListeners() {
     console.log('Translation event listeners set up');
 }
 
-// Initialize the application
-function init() {
+/**
+ * Initialize the application
+ */
+async function init() {
     console.log('Initializing application...');
     
     // Set up voice recognition if available
     initSpeechRecognition();
     
+    // Set up speech synthesis if available
+    initSpeechSynthesis(); 
+    
     // Set up event listeners
     setupEventListeners();
+    setupTranslationEventListeners();
     
-    // Initial data load
-    fetchRecipes();
+    // Load recipes
+    try {
+        await loadInitialRecipes();
+        
+        // Check if we need to translate recipes based on the current language
+        if (window.i18n && window.i18n.currentLanguage !== 'en') {
+            console.log('Translating initial recipes to', window.i18n.currentLanguage);
+            await translateRecipeList(state.recipes, window.i18n.currentLanguage);
+        }
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
     
     console.log('Application initialized');
 }
@@ -775,31 +845,81 @@ async function translateRecipeList(recipes, language) {
 
 // Load and display an image for a recipe card
 async function loadRecipeCardImage(recipeCard, recipeId) {
+    const imagePlaceholder = recipeCard.querySelector('.recipe-image div');
+    
+    // Ensure placeholder exists
+    if (!imagePlaceholder) {
+        console.error('Could not find image placeholder for recipe card:', recipeId);
+        return;
+    }
+    
     try {
         const response = await fetch(`/api/recipes/${recipeId}/image`);
         
         if (!response.ok) {
+            console.warn(`Failed to fetch image info for recipe ${recipeId}: ${response.status}`);
+            // Keep the default placeholder icon
             return;
         }
         
         const data = await response.json();
         
         if (data.image_url) {
-            // Find the image placeholder
-            const imagePlaceholder = recipeCard.querySelector('.recipe-image div');
+            const img = document.createElement('img');
+            img.src = data.image_url;
+            img.alt = recipeCard.querySelector('h3')?.textContent || 'Recipe image'; // Add null check
+            img.className = 'w-full h-full object-cover rounded-t-lg opacity-0 transition-opacity duration-500'; // Start hidden
             
-            // Replace placeholder with actual image
-            if (imagePlaceholder) {
-                imagePlaceholder.innerHTML = '';
-                const img = document.createElement('img');
-                img.src = data.image_url;
-                img.alt = recipeCard.querySelector('h3').textContent;
-                img.className = 'w-full h-full object-cover rounded-t-lg';
+            // Handle successful image loading
+            img.onload = () => {
+                // Clear placeholder and append image
+                imagePlaceholder.innerHTML = ''; 
                 imagePlaceholder.appendChild(img);
-            }
+                // Fade in the image
+                requestAnimationFrame(() => {
+                    img.classList.remove('opacity-0');
+                });
+            };
+            
+            // Handle image loading errors
+            img.onerror = () => {
+                console.warn(`Failed to load image from URL: ${data.image_url} for recipe ${recipeId}`);
+                // Ensure the placeholder icon remains or is restored
+                if (!imagePlaceholder.querySelector('i.fas.fa-utensils')) {
+                     imagePlaceholder.innerHTML = '<i class="fas fa-utensils text-2xl"></i>';
+                }
+            };
+            
+            // Setting the src triggers the loading attempt
+            // No need to append immediately, handled by onload
+        } else {
+            // API returned ok, but no image_url. Keep placeholder.
+             console.log(`No image URL provided for recipe ${recipeId}`);
         }
     } catch (error) {
-        console.error('Error loading recipe card image:', error);
+        console.error(`Error in loadRecipeCardImage for recipe ${recipeId}:`, error);
+        // Ensure placeholder icon remains in case of fetch error
+        if (imagePlaceholder && !imagePlaceholder.querySelector('i.fas.fa-utensils')) {
+             imagePlaceholder.innerHTML = '<i class="fas fa-utensils text-2xl"></i>';
+        }
+    }
+}
+
+/**
+ * Load initial recipes when the application starts
+ * @returns {Promise<Array>} - The loaded recipes
+ */
+async function loadInitialRecipes() {
+    console.log('Loading initial recipes...');
+    
+    try {
+        // Use the existing fetchRecipes function to load recipes
+        // Ensure recipes are loaded before proceeding with translation checks
+        await fetchRecipes(); 
+        return state.recipes; // Return the loaded recipes from state
+    } catch (error) {
+        console.error('Error loading initial recipes:', error);
+        throw error;
     }
 }
 
@@ -808,3 +928,75 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM fully loaded');
     init();
 });
+
+// --- New Speech Synthesis Functions ---
+
+// Function to speak text using SpeechSynthesis
+function speakText(text) {
+    if (!state.isSpeechSynthesisSupported) {
+        console.warn("Speech synthesis not supported, cannot speak.");
+        return;
+    }
+    
+    // Clean up text for speech (remove markdown, etc.)
+    // A simple approach: use the displayed text content, or strip basic markdown
+    let textToSpeak = text.replace(/\*\*/g, ''); // Remove bold markers
+    textToSpeak = textToSpeak.replace(/\n/g, ' '); // Replace newlines with spaces
+
+    // Stop any currently playing speech
+    stopSpeaking();
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    
+    // Optionally set voice, rate, pitch etc.
+    // utterance.voice = state.speechSynthesis.getVoices().find(voice => voice.lang === 'en-US');
+    utterance.lang = 'en-US'; // Match the input language or make dynamic
+    utterance.rate = 1; 
+    utterance.pitch = 1; 
+
+    utterance.onstart = () => {
+        console.log("Speech synthesis started.");
+        state.isSpeaking = true;
+        // Add visual feedback if needed (e.g., change button style)
+        if (elements.voiceAssistantBtn) {
+            // Example: Indicate speaking state - choose a suitable style
+            // elements.voiceAssistantBtn.classList.add('speaking-indicator'); 
+        }
+    };
+
+    utterance.onend = () => {
+        console.log("Speech synthesis finished.");
+        state.isSpeaking = false;
+        // Remove visual feedback
+         if (elements.voiceAssistantBtn) {
+            // elements.voiceAssistantBtn.classList.remove('speaking-indicator');
+        }
+    };
+
+    utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event.error);
+        state.isSpeaking = false;
+        showError(`Speech synthesis error: ${event.error}`);
+        // Remove visual feedback
+        if (elements.voiceAssistantBtn) {
+            // elements.voiceAssistantBtn.classList.remove('speaking-indicator');
+        }
+    };
+
+    state.speechSynthesis.speak(utterance);
+}
+
+// Function to stop ongoing speech
+function stopSpeaking() {
+    if (state.isSpeechSynthesisSupported && state.speechSynthesis.speaking) {
+        console.log("Stopping speech synthesis.");
+        state.speechSynthesis.cancel();
+        state.isSpeaking = false;
+         // Remove visual feedback if applied
+         if (elements.voiceAssistantBtn) {
+            // elements.voiceAssistantBtn.classList.remove('speaking-indicator');
+        }
+    }
+}
+
+// --- End of New Functions ---

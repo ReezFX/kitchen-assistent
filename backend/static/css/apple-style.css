@@ -4,38 +4,38 @@
  */
 
 :root {
-  /* Core Color Palette */
-  --color-primary: #FF6B35; /* Warm orange - cooking/heat */
-  --color-primary-light: #FF8A5C;
-  --color-primary-dark: #E85A2A;
+  /* Core Color Palette - Vivid & Appetizing */
+  --color-primary: #FF5733; /* More vibrant orange-red */
+  --color-primary-light: #FF7F5B;
+  --color-primary-dark: #D1401F;
   
-  --color-secondary: #4CAF50; /* Fresh green - ingredients */
-  --color-secondary-light: #6ABD6E;
-  --color-secondary-dark: #3D8B40;
+  --color-secondary: #5DBB63; /* Brighter, fresher green */
+  --color-secondary-light: #83D387;
+  --color-secondary-dark: #46944A;
   
-  --color-accent: #7D1D3F; /* Deep burgundy - wine/culinary sophistication */
-  --color-accent-light: #9D3D5F;
-  --color-accent-dark: #5D0D2F;
+  --color-accent: #FFC300; /* Brighter Gold */
+  --color-accent-light: #FFD133;
+  --color-accent-dark: #E6B000;
   
-  /* Neutral Colors */
-  --color-background: #F5F5F7;
-  --color-card: #FFFFFF;
-  --color-surface: #F5F5F7;
+  /* Neutral Colors - Warm & Clean */
+  --color-background: #FEFBF6; /* Slightly warmer off-white */
+  --color-card: #FFFFFF; /* Pure White */
+  --color-surface: #FDF8F1; /* Slightly darker than background for subtle depth */
   
-  /* Text Colors */
-  --color-text-primary: #1D1D1F;
-  --color-text-secondary: #4D4D4F;
-  --color-text-tertiary: #86868B;
+  /* Text Colors - Maintain Readability */
+  --color-text-primary: #2E2E2E; /* Very Dark Gray */
+  --color-text-secondary: #585858; /* Medium Gray */
+  --color-text-tertiary: #8A8A8A; /* Lighter Gray */
   
-  /* Status Colors */
+  /* Status Colors (Keep existing vibrant ones) */
   --color-success: #34C759;
-  --color-warning: #FF9500;
-  --color-error: #FF3B30;
+  --color-warning: #FFA500; /* Slightly brighter orange */
+  --color-error: #FF4757; /* Slightly softer red */
   
-  /* Elevation & Shadows */
-  --shadow-small: 0 2px 6px rgba(0, 0, 0, 0.05);
-  --shadow-medium: 0 3px 10px rgba(0, 0, 0, 0.08);
-  --shadow-large: 0 6px 16px rgba(0, 0, 0, 0.12);
+  /* Elevation & Shadows (Slightly softer) */
+  --shadow-small: 0 2px 5px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --shadow-large: 0 8px 20px rgba(0, 0, 0, 0.1);
   
   /* Border Radius */
   --radius-small: 8px;
@@ -68,8 +68,8 @@ html {
 
 body {
   font-family: var(--font-family);
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
+  background-color: var(--color-background); /* Use new warm background */
+  color: var(--color-text-primary); /* Use new text color */
   margin: 0;
   padding: 0;
   line-height: 1.4;
@@ -101,7 +101,7 @@ body {
 .filters-panel {
   width: 260px;
   flex-shrink: 0;
-  background-color: var(--color-card);
+  background-color: var(--color-card); /* Use clean white card color */
   border-radius: var(--radius-medium);
   padding: var(--spacing-md);
   box-shadow: var(--shadow-small);
@@ -155,7 +155,7 @@ body {
 
 /* Card Component */
 .apple-card {
-  background: var(--color-card);
+  background: var(--color-card); /* Use clean white card color */
   border-radius: var(--radius-medium);
   box-shadow: var(--shadow-small);
   overflow: hidden;
@@ -169,14 +169,19 @@ body {
 
 /* Header */
 .apple-header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85)); /* Subtle gradient */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   position: sticky;
   top: 0;
   z-index: 100;
   padding: var(--spacing-sm) 0;
-  box-shadow: var(--shadow-small);
+  box-shadow: var(--shadow-medium); /* Slightly increased shadow */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04); 
+}
+
+.apple-header .fa-utensils {
+    color: var(--color-primary-dark) !important; /* Make icon match primary */
 }
 
 /* Navigation */
@@ -191,11 +196,19 @@ body {
   text-decoration: none;
   font-weight: 500;
   transition: color var(--transition-fast);
+  padding-bottom: 4px; /* Space for underline */
+  border-bottom: 2px solid transparent; /* Underline setup */
 }
 
-.apple-nav-link:hover,
-.apple-nav-link.active {
+.apple-nav-link:hover {
   color: var(--color-primary);
+  border-bottom-color: var(--color-primary-light); /* Underline on hover */
+}
+
+.apple-nav-link.active {
+  color: var(--color-primary-dark); /* Darker primary for active */
+  font-weight: 600;
+  border-bottom-color: var(--color-primary); /* Solid underline for active */
 }
 
 /* Buttons */
@@ -210,43 +223,55 @@ body {
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
+  text-transform: uppercase; /* Make buttons slightly more prominent */
+  letter-spacing: 0.5px;
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(to bottom right, var(--color-primary), var(--color-primary-dark));
   color: white;
+  box-shadow: 0 2px 4px rgba(209, 64, 31, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-dark);
+  background: linear-gradient(to bottom right, var(--color-primary-light), var(--color-primary));
+  box-shadow: 0 4px 8px rgba(209, 64, 31, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--color-secondary);
+  background: linear-gradient(to bottom right, var(--color-secondary), var(--color-secondary-dark));
   color: white;
+   box-shadow: 0 2px 4px rgba(70, 148, 74, 0.3);
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-secondary-dark);
+  background: linear-gradient(to bottom right, var(--color-secondary-light), var(--color-secondary));
+  box-shadow: 0 4px 8px rgba(70, 148, 74, 0.4);
+  transform: translateY(-1px);
 }
 
+/* Make Accent button stand out */
 .btn-accent {
-  background-color: var(--color-accent);
-  color: white;
+  background: linear-gradient(to bottom right, var(--color-accent-light), var(--color-accent));
+  color: var(--color-text-primary); 
+  box-shadow: 0 2px 4px rgba(230, 176, 0, 0.3);
 }
 
 .btn-accent:hover {
-  background-color: var(--color-accent-dark);
+  background: linear-gradient(to bottom right, var(--color-accent), var(--color-accent-dark));
+  box-shadow: 0 4px 8px rgba(230, 176, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-text {
   background-color: transparent;
-  color: var(--color-primary);
+  color: var(--color-primary); /* Use new primary color */
   padding: var(--spacing-xxs) var(--spacing-xs);
 }
 
 .btn-text:hover {
-  background-color: rgba(255, 107, 53, 0.1);
+  background-color: rgba(255, 99, 71, 0.1); /* Use light tint of new primary color */
 }
 
 .btn-icon {
@@ -261,18 +286,18 @@ body {
 
 /* Input fields */
 .apple-input {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid #E0E0E0; /* Softer border */
   border-radius: var(--radius-small);
   padding: var(--spacing-sm) var(--spacing-md);
   width: 100%;
   font-size: 0.9375rem;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--color-card); 
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .apple-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+  border-color: var(--color-secondary); /* Focus with secondary color */
+  box-shadow: 0 0 0 3px rgba(93, 187, 99, 0.2); /* Secondary color glow */
   outline: none;
 }
 
@@ -284,22 +309,29 @@ body {
   border-radius: var(--radius-medium);
   overflow: hidden;
   background-color: var(--color-card);
-  box-shadow: var(--shadow-small);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-medium); /* Slightly more prominent shadow */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border: 1px solid #eee; /* Subtle border */
+  border-top: 4px solid var(--color-secondary-light); /* Add a top accent */
   cursor: pointer;
   margin-bottom: var(--spacing-xs);
 }
 
 .recipe-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-medium);
+  transform: translateY(-6px) scale(1.01); /* More lift */
+  box-shadow: var(--shadow-large);
+  border-top-color: var(--color-primary); /* Change top border color on hover */
 }
 
 .recipe-image {
   height: 160px;
   overflow: hidden;
-  background-color: var(--color-background);
+  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0); /* Gradient placeholder */
   position: relative;
+}
+
+.recipe-image .fa-utensils {
+    color: #bbb; /* Lighter placeholder icon */
 }
 
 .recipe-image img {
@@ -351,17 +383,27 @@ body {
 .recipe-tag {
   display: inline-flex;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: var(--color-surface); /* Use surface color */
   color: var(--color-text-secondary);
   font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  padding: 3px 10px;
+  border-radius: 15px; /* More rounded */
+  transition: all var(--transition-fast);
+  border: 1px solid #EAEAEA;
 }
 
-.recipe-tag:hover, .recipe-tag.active {
+.recipe-tag:hover {
+  background-color: var(--color-accent-light);
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.recipe-tag.active {
   background-color: var(--color-primary);
   color: white;
+  border-color: var(--color-primary-dark);
+  font-weight: 500;
 }
 
 .filter-tag {
@@ -441,7 +483,7 @@ body {
   width: 28px;
   height: 28px;
   min-width: 28px;
-  background-color: var(--color-primary);
+  background-color: var(--color-primary); /* Use new primary color */
   color: white;
   border-radius: var(--radius-circle);
   display: flex;
@@ -458,7 +500,7 @@ body {
 
 /* Assistant */
 .assistant-container {
-  background-color: var(--color-card);
+  background-color: var(--color-card); /* Use white card background */
   border-radius: var(--radius-medium);
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-small);
@@ -474,7 +516,7 @@ body {
 .assistant-icon {
   width: 36px;
   height: 36px;
-  background-color: var(--color-primary);
+  background-color: var(--color-primary); /* Use new primary color */
   color: white;
   border-radius: var(--radius-circle);
   display: flex;
@@ -497,18 +539,20 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-small);
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--color-card); /* Use white background */
 }
 
 .assistant-input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary); /* Use new primary color */
 }
 
 .assistant-response {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: #F9F9F9; /* Slightly off-white */
   border-radius: var(--radius-small);
   padding: var(--spacing-md);
+  border-left: 4px solid var(--color-secondary); 
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.03);
 }
 
 /* Recipe Detail Layout */
@@ -582,10 +626,11 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: var(--color-card);
+    background-color: var(--color-card); /* Use white background */
     padding: var(--spacing-xs) 0;
     z-index: 50;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.05); /* Add subtle top border */
   }
   
   .mobile-nav-item {
@@ -607,7 +652,7 @@ body {
   }
   
   .mobile-nav-item.active {
-    color: var(--color-primary);
+    color: var(--color-primary); /* Use new primary color */
   }
   
   .recipe-detail-layout {
@@ -645,38 +690,71 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #1A1A1C;
-    --color-card: #2A2A2C;
-    --color-surface: #222224;
-    --color-text-primary: #FFFFFF;
-    --color-text-secondary: #AAAAAC;
-    --color-text-tertiary: #777779;
+    --color-background: #281D18; /* Darker, richer brown */
+    --color-card: #3A2C25; /* Warmer card */
+    --color-surface: #30231E; /* Darker surface */
+    --color-text-primary: #F8EDE3;
+    --color-text-secondary: #DDCAB9;
+    --color-text-tertiary: #B09F91;
+
+    --shadow-small: 0 2px 5px rgba(0, 0, 0, 0.15);
+    --shadow-medium: 0 4px 10px rgba(0, 0, 0, 0.2);
+    --shadow-large: 0 8px 20px rgba(0, 0, 0, 0.25);
   }
   
   .apple-header {
-    background: rgba(42, 42, 44, 0.85);
+    background: linear-gradient(to bottom, rgba(58, 44, 37, 0.95), rgba(58, 44, 37, 0.85));
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+     box-shadow: var(--shadow-medium);
   }
   
   .apple-input {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.25);
     border-color: rgba(255, 255, 255, 0.1);
   }
   
+  .apple-input:focus {
+     border-color: var(--color-secondary-light); 
+     box-shadow: 0 0 0 3px rgba(131, 211, 135, 0.25);
+  }
+  
+  .recipe-card {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--color-secondary); 
+    box-shadow: var(--shadow-medium);
+  }
+  .recipe-card:hover {
+     border-top-color: var(--color-primary-light);
+     box-shadow: var(--shadow-large);
+  }
+  
+  .recipe-image {
+    background: linear-gradient(to bottom, #4a3d36, #3a2d26); /* Dark gradient placeholder */
+  }
+   .recipe-image .fa-utensils {
+    color: #776a61; 
+}
+
   .recipe-tag {
     background-color: rgba(255, 255, 255, 0.08);
-  }
-  
-  .assistant-input {
-    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--color-text-secondary);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
-  .assistant-response {
-    background-color: rgba(255, 255, 255, 0.05);
+  .recipe-tag:hover {
+     background-color: var(--color-accent-dark);
+     color: var(--color-text-primary);
+     border-color: var(--color-accent);
   }
-  
-  .mobile-nav {
-    background-color: var(--color-card);
+  .recipe-tag.active {
+      background-color: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary-dark);
+   }
+
+   .assistant-response {
+    background-color: rgba(255, 255, 255, 0.04); 
+    border-left-color: var(--color-secondary-light);
+     box-shadow: inset 2px 2px 5px rgba(0,0,0,0.15);
   }
 }
 
@@ -692,7 +770,7 @@ body {
   border-radius: var(--radius-medium);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-medium);
-  border-left: 4px solid var(--color-primary);
+  border-left: 4px solid var(--color-primary); /* Use new primary color */
 }
 
 .recipe-assistant .assistant-title {
@@ -703,28 +781,170 @@ body {
 .recipe-assistant .assistant-icon {
   width: 42px;
   height: 42px;
-  background-color: var(--color-primary);
+  background-color: var(--color-primary); /* Use new primary color */
 }
 
 .recipe-assistant .assistant-response {
   background-color: rgba(0, 0, 0, 0.02);
   border-radius: var(--radius-small);
   padding: var(--spacing-lg);
-  border-left: 2px solid var(--color-secondary);
+  border-left: 2px solid var(--color-secondary); /* Use new secondary color */
 }
 
 @media (prefers-color-scheme: dark) {
   .recipe-assistant {
-    border-left-color: var(--color-primary);
+    border-left-color: var(--color-primary); /* Use new primary color */
   }
   
   .recipe-assistant .assistant-response {
     background-color: rgba(255, 255, 255, 0.05);
-    border-left-color: var(--color-secondary);
+    border-left-color: var(--color-secondary-light); /* Use lighter secondary */
   }
 }
 
 .recipe-card-wrapper {
   height: 100%;
   margin-bottom: var(--spacing-md);
+}
+
+/* Back button styling */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  margin: 6px 0 12px 0;
+  background-color: var(--color-primary); /* Use new primary color */
+  color: white !important; /* Ensure text is white */
+  border-radius: var(--radius-small);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-small);
+}
+
+.btn-back:hover {
+  background-color: var(--color-primary-dark); /* Use new primary dark */
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+.btn-back i {
+  transition: transform var(--transition-fast);
+}
+
+.btn-back:hover i {
+  transform: translateX(-3px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation classes */
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: slideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  opacity: 0;
+  transform: scale(0.95);
+  animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Initially hide animated elements */
+.animation-ready {
+  opacity: 0;
+  will-change: opacity, transform;
+  animation-play-state: paused;
+}
+
+.animation-ready.animate-fade-in,
+.animation-ready.animate-slide-up,
+.animation-ready.animate-slide-right,
+.animation-ready.animate-scale-in {
+  animation-play-state: running;
+}
+
+/* Delay utility classes */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+.delay-600 {
+  animation-delay: 0.6s;
+}
+
+.delay-700 {
+  animation-delay: 0.7s;
+}
+
+.delay-800 {
+  animation-delay: 0.8s;
 }
