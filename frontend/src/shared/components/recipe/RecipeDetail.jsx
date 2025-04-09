@@ -113,33 +113,36 @@ const RecipeDetail = () => {
   const [recipe, setRecipe] = useState(null);
   const [localError, setLocalError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const retryCount = useRef(0);
-  const maxRetries = 2;
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+  const attemptRef = useRef(0);
+  const MAX_ATTEMPTS = 1; // Only try once to prevent flickering
   
-  // Fetch recipe on component mount als useCallback-Funktion, um sie in useEffect zu verwenden
+  // Fetch recipe on component mount
   const fetchRecipe = useCallback(async () => {
     if (!id) {
       setLocalError('Keine Rezept-ID gefunden');
       setIsLoading(false);
       return;
     }
+
+    if (attemptRef.current >= MAX_ATTEMPTS) {
+      // Don't retry if we've already reached max attempts
+      return;
+    }
     
     try {
       setIsLoading(true);
       setLocalError(null);
+      
+      // Track that we've attempted a fetch
+      setHasAttemptedFetch(true);
+      attemptRef.current += 1;
+      
       const data = await getRecipeById(id);
       setRecipe(data);
-      retryCount.current = 0; // Reset retry count on success
     } catch (err) {
       console.error('Fehler beim Laden des Rezepts:', err);
-      
-      // Prevent continuous retries
-      if (retryCount.current >= maxRetries) {
-        setLocalError(err.message || 'Das Rezept konnte nicht geladen werden. Bitte versuchen Sie es später noch einmal.');
-        setIsLoading(false);
-        return;
-      }
-      retryCount.current += 1;
+      setLocalError(err.message || 'Das Rezept konnte nicht geladen werden. Bitte versuchen Sie es später noch einmal.');
     } finally {
       setIsLoading(false);
     }
@@ -147,19 +150,22 @@ const RecipeDetail = () => {
   
   useEffect(() => {
     let isMounted = true;
+    let timeoutId = null;
     
     const loadRecipe = async () => {
-      if (isMounted) {
+      if (isMounted && !hasAttemptedFetch) {
         await fetchRecipe();
       }
     };
     
-    loadRecipe();
+    // Use a small timeout to prevent immediate refetching
+    timeoutId = setTimeout(loadRecipe, 100);
     
     return () => {
       isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [fetchRecipe]);
+  }, [fetchRecipe, hasAttemptedFetch]);
   
   const handleDelete = async () => {
     if (window.confirm('Möchtest du dieses Rezept wirklich löschen?')) {
@@ -175,6 +181,13 @@ const RecipeDetail = () => {
     }
   };
   
+  const handleRetry = () => {
+    attemptRef.current = 0;
+    setHasAttemptedFetch(false);
+    setLocalError(null);
+    fetchRecipe();
+  };
+  
   const getDifficultyText = (difficulty) => {
     switch (difficulty) {
       case 'easy': return 'Einfach';
@@ -186,19 +199,51 @@ const RecipeDetail = () => {
   
   // Zeige Loading-Zustand
   if (isLoading) {
-    return <Loading>Rezept wird geladen...</Loading>;
+    return (
+      <Container>
+        <Card>
+          <Loading>Rezept wird geladen...</Loading>
+        </Card>
+      </Container>
+    );
   }
   
   // Zeige Error-Zustand
   if (localError || error) {
-    return <Error>{localError || error}</Error>;
+    return (
+      <Container>
+        <Card>
+          <Error>{localError || error}</Error>
+          <ButtonContainer>
+            <Button onClick={handleRetry} variant="primary">
+              Erneut versuchen
+            </Button>
+            <Button onClick={() => navigate('/recipes')} variant="secondary">
+              Zurück zur Übersicht
+            </Button>
+          </ButtonContainer>
+        </Card>
+      </Container>
+    );
   }
   
   // Zeige Meldung, wenn kein Rezept gefunden wurde
   if (!recipe) {
-    return <Error>Rezept nicht gefunden.</Error>;
+    return (
+      <Container>
+        <Card>
+          <Error>Rezept nicht gefunden.</Error>
+          <ButtonContainer>
+            <Button onClick={() => navigate('/recipes')} variant="secondary">
+              Zurück zur Übersicht
+            </Button>
+          </ButtonContainer>
+        </Card>
+      </Container>
+    );
   }
   
+  // Render recipe content
   return (
     <Container>
       <Card>
