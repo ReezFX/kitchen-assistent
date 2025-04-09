@@ -85,7 +85,7 @@ const CookingAssistant = () => {
   const [recipeContext, setRecipeContext] = useState('');
   const messagesEndRef = useRef(null);
   
-  const { getAssistance, isLoading, error } = useAIService();
+  const { getAssistance, isLoading } = useAIService();
   
   // Auto-scroll to the bottom when new messages are added
   useEffect(() => {

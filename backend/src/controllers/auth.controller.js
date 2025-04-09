@@ -116,10 +116,29 @@ exports.updateProfile = async (req, res) => {
       user.email = req.body.email || user.email;
       
       if (req.body.preferences) {
-        user.preferences = {
-          ...user.preferences,
-          ...req.body.preferences
+        // Konvertiere vorhandene Präferenzen in ein einfaches Objekt
+        const currentPreferences = user.preferences.toObject();
+        
+        // Stelle sicher, dass die ingredients-Struktur korrekt ist
+        let updatedIngredients = currentPreferences.ingredients;
+        
+        // Übernimm neue ingredients nur, wenn sie in den neuen Präferenzen enthalten sind
+        if (req.body.preferences.ingredients) {
+          updatedIngredients = {
+            ...currentPreferences.ingredients,
+            ...req.body.preferences.ingredients
+          };
+        }
+        
+        // Erstelle die aktualisierten Präferenzen
+        const updatedPreferences = {
+          ...currentPreferences,
+          ...req.body.preferences,
+          ingredients: updatedIngredients
         };
+        
+        // Aktualisiere das User-Objekt
+        user.preferences = updatedPreferences;
       }
       
       if (req.body.password) {

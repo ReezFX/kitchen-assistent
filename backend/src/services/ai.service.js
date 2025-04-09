@@ -12,15 +12,15 @@ class AIService {
                   Format: Titel, Zutaten mit Mengen, Schritte, Nährwertangaben.`;
     
     try {
-      const response = await this.model.generateContent({
-        contents: [{ text: prompt }],
+      const result = await this.model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 1000
         }
       });
       
-      return response.response.text();
+      return result.response.text();
     } catch (error) {
       console.error('Error generating recipe:', error);
       throw error;
@@ -31,15 +31,15 @@ class AIService {
     const prompt = `Im Kontext dieses Rezepts: ${recipeContext}\nMeine Frage: ${question}`;
     
     try {
-      const response = await this.model.generateContent({
-        contents: [{ text: prompt }],
+      const result = await this.model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.3,
           maxOutputTokens: 500
         }
       });
       
-      return response.response.text();
+      return result.response.text();
     } catch (error) {
       console.error('Error providing cooking assistance:', error);
       throw error;
@@ -50,15 +50,15 @@ class AIService {
     const prompt = `Übersetze den folgenden Text ins ${targetLanguage}: ${content}`;
     
     try {
-      const response = await this.model.generateContent({
-        contents: [{ text: prompt }],
+      const result = await this.model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 1000
         }
       });
       
-      return response.response.text();
+      return result.response.text();
     } catch (error) {
       console.error('Error translating content:', error);
       throw error;

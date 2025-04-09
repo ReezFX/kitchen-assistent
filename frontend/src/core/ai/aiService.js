@@ -44,4 +44,6 @@ class AIService {
   }
 }
 
-export default new AIService(); 
+// Erstelle eine Instanz und exportiere sie
+const aiService = new AIService();
+export default aiService; 
