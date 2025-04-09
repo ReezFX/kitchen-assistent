@@ -1,0 +1,50 @@
+import React from 'react';
+import styled from 'styled-components';
+import { Link } from 'react-router-dom';
+import Button from './common/Button';
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+`;
+
+const ErrorCode = styled.h1`
+  font-size: 120px;
+  margin: 0;
+  color: #4f46e5;
+  font-weight: 700;
+`;
+
+const Title = styled.h2`
+  font-size: 24px;
+  margin: 16px 0;
+  color: #1f2937;
+`;
+
+const Message = styled.p`
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+  max-width: 500px;
+`;
+
+const NotFoundPage = () => {
+  return (
+    <Container>
+      <ErrorCode>404</ErrorCode>
+      <Title>Seite nicht gefunden</Title>
+      <Message>
+        Die angeforderte Seite existiert nicht oder ist nicht mehr verfügbar.
+      </Message>
+      <Button as={Link} to="/">
+        Zurück zur Startseite
+      </Button>
+    </Container>
+  );
+};
+
+export default NotFoundPage; 
