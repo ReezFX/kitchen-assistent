@@ -23,6 +23,10 @@ const recipeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  image: {
+    data: String, // Base64 encoded image data
+    contentType: String,
+  },
   isAIGenerated: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });

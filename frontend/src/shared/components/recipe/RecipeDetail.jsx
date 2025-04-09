@@ -5,6 +5,7 @@ import { useRecipes } from '../../hooks/useRecipes';
 import { useAIService } from '../../hooks/useAIService';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import ImageUpload from '../common/ImageUpload';
 
 const Container = styled.div`
   max-width: 800px;
@@ -22,6 +23,23 @@ const RecipeTitle = styled.h1`
   margin-bottom: 16px;
   color: #1f2937;
   font-weight: 700;
+`;
+
+const RecipeImage = styled.div`
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+`;
+
+const ImageSection = styled.div`
+  margin-bottom: 24px;
 `;
 
 const RecipeMeta = styled.div`
@@ -312,13 +330,15 @@ const AssistantTitle = styled.h2`
 const RecipeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getRecipeById, deleteRecipe, error } = useRecipes();
+  const { getRecipeById, deleteRecipe, updateRecipe, error } = useRecipes();
   const [recipe, setRecipe] = useState(null);
   const [localError, setLocalError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const attemptRef = useRef(0);
   const MAX_ATTEMPTS = 1; // Only try once to prevent flickering
+  const [imageFile, setImageFile] = useState(null);
+  const [isImageUpdating, setIsImageUpdating] = useState(false);
   
   // Kochassistent States
   const [messages, setMessages] = useState([
@@ -572,6 +592,109 @@ const RecipeDetail = () => {
     }
   };
   
+  const handleImageChange = (file) => {
+    setImageFile(file);
+    // Clear any previous errors when selecting a new image
+    setLocalError(null);
+  };
+  
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+    
+    setIsImageUpdating(true);
+    setLocalError(null);
+    
+    try {
+      console.log('Original image file size:', imageFile.size / 1024, 'KB');
+      
+      // For small images under 500KB, use a simpler approach to avoid any issues
+      if (imageFile.size < 500 * 1024) {
+        console.log('Small image detected, using simplified upload');
+        try {
+          // Create a FormData object for multipart upload instead of JSON
+          const formData = new FormData();
+          formData.append('image', imageFile);
+          formData.append('recipeId', id);
+          
+          // Use axios instead of fetch with the correct API URL
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+          console.log('Using API URL:', apiUrl);
+          
+          const response = await fetch(`${apiUrl}/recipes/${id}/image`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            console.error('Upload failed with status:', response.status);
+            throw { message: `Upload fehlgeschlagen: ${response.status} ${response.statusText || 'Unbekannter Fehler'}` };
+          }
+          
+          const updatedData = await response.json();
+          setRecipe(updatedData);
+          setImageFile(null);
+          setIsImageUpdating(false);
+          return;
+        } catch (uploadErr) {
+          console.error('Upload error:', uploadErr);
+          // Fallback to the JSON method if the multipart upload fails
+          console.log('Fallback to JSON upload method...');
+        }
+      }
+      
+      // For larger images, read as base64 and send as JSON
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Get base64 data
+          const base64String = reader.result.split(',')[1];
+          console.log('Base64 size:', (base64String.length * 0.75) / 1024, 'KB'); // Approx size
+          resolve(base64String);
+        };
+        reader.onerror = () => reject({ message: 'Fehler beim Lesen der Datei' });
+        reader.readAsDataURL(imageFile);
+      });
+      
+      // Update with only the image data to minimize payload size
+      const imageData = {
+        image: {
+          data: base64Image,
+          contentType: imageFile.type
+        }
+      };
+      
+      try {
+        // Update the recipe with the new image
+        const updatedData = await updateRecipe(id, imageData);
+        
+        if (updatedData) {
+          setRecipe(updatedData);
+          setImageFile(null);
+          setIsImageUpdating(false);
+        }
+      } catch (updateErr) {
+        console.error('Fehler beim Aktualisieren des Rezepts:', updateErr);
+        setLocalError(`Fehler beim Speichern: ${updateErr.message || 'Unbekannter Fehler'}`);
+        setIsImageUpdating(false);
+      }
+    } catch (err) {
+      console.error('Fehler beim Hochladen des Bildes:', err);
+      console.log('Failed image details:', {
+        fileName: imageFile.name,
+        fileType: imageFile.type,
+        fileSize: `${(imageFile.size / 1024).toFixed(2)} KB`
+      });
+      
+      if (err.response && err.response.status === 413) {
+        setLocalError('Der Server konnte das Bild nicht verarbeiten. Bitte komprimieren Sie es vor dem Hochladen.');
+      } else {
+        setLocalError(`Fehler beim Hochladen: ${err.message || 'Unbekannter Fehler'}`);
+      }
+      setIsImageUpdating(false);
+    }
+  };
+  
   // Zeige Loading-Zustand
   if (isLoading) {
     return (
@@ -624,6 +747,41 @@ const RecipeDetail = () => {
       <Card>
         <RecipeHeader>
           <RecipeTitle>{recipe.title}</RecipeTitle>
+          
+          {recipe.image && recipe.image.data && (
+            <RecipeImage>
+              <img 
+                src={`data:${recipe.image.contentType};base64,${recipe.image.data}`} 
+                alt={recipe.title} 
+              />
+            </RecipeImage>
+          )}
+          
+          <ImageSection>
+            <h3>Rezeptbild</h3>
+            <ImageUpload 
+              label="Bild hochladen oder ändern"
+              onChange={handleImageChange}
+              currentImage={recipe.image && recipe.image.data ? 
+                `data:${recipe.image.contentType};base64,${recipe.image.data}` : ''}
+            />
+            
+            {imageFile && (
+              <Button 
+                onClick={handleImageUpload}
+                disabled={isImageUpdating}
+                variant="primary"
+              >
+                {isImageUpdating ? 'Wird hochgeladen...' : 'Bild speichern'}
+              </Button>
+            )}
+            
+            {localError && (
+              <div style={{ color: '#ef4444', marginTop: '10px', fontSize: '14px' }}>
+                {localError}
+              </div>
+            )}
+          </ImageSection>
           
           <TagsContainer>
             {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}

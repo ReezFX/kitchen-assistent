@@ -11,6 +11,10 @@ router.route('/')
   .post(recipeController.createRecipe)
   .get(recipeController.getRecipes);
 
+// Route for image upload
+router.route('/:id/image')
+  .post(recipeController.uploadImage);
+
 router.route('/:id')
   .get(recipeController.getRecipeById)
   .put(recipeController.updateRecipe)

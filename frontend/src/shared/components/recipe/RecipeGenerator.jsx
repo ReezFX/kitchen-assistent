@@ -9,6 +9,7 @@ import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import IngredientSelector from './IngredientSelector';
+import ImageUpload from '../common/ImageUpload';
 
 const Form = styled.form`
   display: flex;
@@ -110,8 +111,10 @@ const RecipeGenerator = () => {
   });
   const [recipe, setRecipe] = useState(null);
   const [success, setSuccess] = useState('');
+  const [recipeImage, setRecipeImage] = useState(null);
+  const [error, setError] = useState('');
   
-  const { generateRecipe, isLoading, error } = useAIService();
+  const { generateRecipe, isLoading, error: aiError } = useAIService();
   const { createRecipe, loading: saveLoading } = useRecipes();
   const { isAuthenticated } = useAuth();
 
@@ -157,6 +160,10 @@ const RecipeGenerator = () => {
     } catch (error) {
       console.error('Fehler bei der Rezeptgenerierung:', error);
     }
+  };
+
+  const handleImageChange = (file) => {
+    setRecipeImage(file);
   };
 
   const handleSaveRecipe = async () => {
@@ -531,7 +538,7 @@ const RecipeGenerator = () => {
       console.log(`Extrahierte Zutaten:`, extractedIngredients);
       console.log(`Extrahierte Schritte:`, steps);
       
-      // Create a structured recipe object
+      // Create recipe data object without image first
       const recipeData = {
         title,
         ingredients: extractedIngredients,
@@ -542,8 +549,37 @@ const RecipeGenerator = () => {
         isAIGenerated: true
       };
       
+      // Process image separately if available
+      if (recipeImage) {
+        try {
+          const reader = new FileReader();
+          
+          const readImagePromise = new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Fehler beim Lesen der Bilddatei.'));
+            reader.readAsDataURL(recipeImage);
+          });
+          
+          const base64data = await readImagePromise;
+          const contentType = recipeImage.type;
+          
+          // Remove the data:image/jpeg;base64, part
+          const base64Image = base64data.split(',')[1];
+          
+          // Add image to recipe data
+          recipeData.image = {
+            data: base64Image,
+            contentType
+          };
+        } catch (imgErr) {
+          console.error('Fehler bei der Bildverarbeitung:', imgErr);
+          // Continue without image if there's an error processing it
+        }
+      }
+      
       // eslint-disable-next-line
       const savedRecipe = await createRecipe(recipeData);
+      setRecipeImage(null);
       setSuccess('Rezept erfolgreich gespeichert!');
       
       // Hide success message after 5 seconds
@@ -552,6 +588,11 @@ const RecipeGenerator = () => {
       }, 5000);
     } catch (error) {
       console.error('Fehler beim Speichern des Rezepts:', error);
+      if (error.response && error.response.status === 413) {
+        setError('Das Bild ist zu groß für den Upload. Bitte verwenden Sie ein kleineres Bild.');
+      } else {
+        setError(error.response?.data?.message || 'Fehler beim Speichern des Rezepts.');
+      }
     }
   };
 
@@ -612,6 +653,7 @@ const RecipeGenerator = () => {
     <Card title="Personalisiertes Rezept erstellen">
       <Form onSubmit={handleSubmit}>
         {error && <Error>{error}</Error>}
+        {aiError && <Error>{aiError}</Error>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
         
         <div>
@@ -677,14 +719,23 @@ const RecipeGenerator = () => {
           <RecipeContent dangerouslySetInnerHTML={{ __html: formatRecipeText(recipe.text) }} />
           
           {isAuthenticated && (
-            <ButtonGroup>
-              <Button 
-                onClick={handleSaveRecipe}
-                disabled={saveLoading}
-              >
-                {saveLoading ? 'Speichern...' : 'Rezept speichern'}
-              </Button>
-            </ButtonGroup>
+            <>
+              <div style={{ marginTop: '20px' }}>
+                <h4>Rezeptbild hinzufügen (optional)</h4>
+                <ImageUpload 
+                  onChange={handleImageChange}
+                />
+              </div>
+              
+              <ButtonGroup>
+                <Button 
+                  onClick={handleSaveRecipe}
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Speichern...' : 'Rezept speichern'}
+                </Button>
+              </ButtonGroup>
+            </>
           )}
         </RecipeDisplay>
       )}

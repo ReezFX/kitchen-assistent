@@ -19,7 +19,10 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+
+// Erhöhen der Limits für JSON und URL-encodierte Daten
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Define routes
 app.use('/api/ai', aiRoutes);

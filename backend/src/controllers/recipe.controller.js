@@ -1,4 +1,14 @@
 const Recipe = require('../models/recipe.model');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+// Setup multer for memory storage with increased size limit
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit (erhöht von 2MB)
+}).single('image');
 
 // @desc    Create a new recipe
 // @route   POST /api/recipes
@@ -132,5 +142,68 @@ exports.deleteRecipe = async (req, res) => {
   } catch (error) {
     console.error('Fehler beim Löschen des Rezepts:', error);
     res.status(500).json({ message: 'Serverfehler beim Löschen des Rezepts' });
+  }
+};
+
+// @desc    Upload recipe image via FormData
+// @route   POST /api/recipes/:id/image
+// @access  Private
+exports.uploadImage = async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    
+    if (!recipe) {
+      return res.status(404).json({ message: 'Rezept nicht gefunden' });
+    }
+
+    // Check if recipe belongs to user
+    if (recipe.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Nicht autorisiert' });
+    }
+
+    // Use multer to handle the multipart form data
+    upload(req, res, async function(err) {
+      if (err) {
+        console.error('Fehler beim Hochladen des Bildes:', err);
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ 
+              message: 'Die Bilddatei ist zu groß (max. 10MB erlaubt)' 
+            });
+          }
+          return res.status(400).json({ message: `Fehler beim Upload: ${err.message}` });
+        }
+        return res.status(500).json({ message: 'Serverfehler beim Hochladen des Bildes' });
+      }
+      
+      // If no file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: 'Keine Datei hochgeladen' });
+      }
+      
+      const fileSize = req.file.size / 1024 / 1024; // Größe in MB
+      console.log(`Bild empfangen: ${req.file.originalname}, Größe: ${fileSize.toFixed(2)}MB`);
+      
+      try {
+        // Convert buffer to base64
+        const imageBuffer = req.file.buffer;
+        const base64Image = imageBuffer.toString('base64');
+        
+        // Update recipe with the image
+        recipe.image = {
+          data: base64Image,
+          contentType: req.file.mimetype
+        };
+        
+        await recipe.save();
+        res.json(recipe);
+      } catch (saveErr) {
+        console.error('Fehler beim Speichern des Bildes:', saveErr);
+        res.status(500).json({ message: 'Fehler beim Speichern des Bildes in der Datenbank' });
+      }
+    });
+  } catch (error) {
+    console.error('Fehler beim Hochladen des Bildes:', error);
+    res.status(500).json({ message: 'Serverfehler beim Hochladen des Bildes' });
   }
 }; 
