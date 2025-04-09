@@ -15,10 +15,25 @@ const recipeService = {
   // Get a single recipe by ID
   getRecipeById: async (id) => {
     try {
-      const { data } = await api.get(`/recipes/${id}`);
+      // Mit zusätzlichen Optionen für diese spezifische Anfrage
+      const config = {
+        timeout: 45000, // 45 Sekunden für diese spezifische Anfrage
+      };
+      const { data } = await api.get(`/recipes/${id}`, config);
       return data;
     } catch (error) {
       console.error(`Error fetching recipe with ID ${id}:`, error);
+      // Spezifischeres Fehlerhandling
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Die Anfrage hat zu lange gedauert. Bitte versuchen Sie es später erneut.');
+      } else if (error.response) {
+        // Server hat mit einem Fehlercode geantwortet
+        const errorMsg = error.response.data?.message || `Fehler (${error.response.status}): Rezept konnte nicht geladen werden.`;
+        throw new Error(errorMsg);
+      } else if (error.request) {
+        // Die Anfrage wurde gestellt, aber keine Antwort erhalten
+        throw new Error('Server nicht erreichbar. Bitte überprüfen Sie Ihre Internetverbindung.');
+      }
       throw error;
     }
   },

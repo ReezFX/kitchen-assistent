@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useRecipes } from '../../hooks/useRecipes';
@@ -111,28 +111,66 @@ const RecipeDetail = () => {
   const navigate = useNavigate();
   const { getRecipeById, deleteRecipe, loading, error } = useRecipes();
   const [recipe, setRecipe] = useState(null);
+  const [localError, setLocalError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const retryCount = useRef(0);
+  const maxRetries = 2;
   
-  // Fetch recipe on component mount
+  // Fetch recipe on component mount als useCallback-Funktion, um sie in useEffect zu verwenden
+  const fetchRecipe = useCallback(async () => {
+    if (!id) {
+      setLocalError('Keine Rezept-ID gefunden');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setLocalError(null);
+      const data = await getRecipeById(id);
+      setRecipe(data);
+      retryCount.current = 0; // Reset retry count on success
+    } catch (err) {
+      console.error('Fehler beim Laden des Rezepts:', err);
+      
+      // Prevent continuous retries
+      if (retryCount.current >= maxRetries) {
+        setLocalError(err.message || 'Das Rezept konnte nicht geladen werden. Bitte versuchen Sie es später noch einmal.');
+        setIsLoading(false);
+        return;
+      }
+      retryCount.current += 1;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, getRecipeById]);
+  
   useEffect(() => {
-    const fetchRecipe = async () => {
-      try {
-        const data = await getRecipeById(id);
-        setRecipe(data);
-      } catch (err) {
-        console.error('Fehler beim Laden des Rezepts:', err);
+    let isMounted = true;
+    
+    const loadRecipe = async () => {
+      if (isMounted) {
+        await fetchRecipe();
       }
     };
     
-    fetchRecipe();
-  }, [id, getRecipeById]);
+    loadRecipe();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchRecipe]);
   
   const handleDelete = async () => {
     if (window.confirm('Möchtest du dieses Rezept wirklich löschen?')) {
       try {
+        setIsLoading(true);
         await deleteRecipe(id);
         navigate('/recipes');
       } catch (err) {
         console.error('Fehler beim Löschen des Rezepts:', err);
+        setLocalError(err.message || 'Fehler beim Löschen des Rezepts');
+        setIsLoading(false);
       }
     }
   };
@@ -146,14 +184,17 @@ const RecipeDetail = () => {
     }
   };
   
-  if (loading) {
+  // Zeige Loading-Zustand
+  if (isLoading) {
     return <Loading>Rezept wird geladen...</Loading>;
   }
   
-  if (error) {
-    return <Error>{error}</Error>;
+  // Zeige Error-Zustand
+  if (localError || error) {
+    return <Error>{localError || error}</Error>;
   }
   
+  // Zeige Meldung, wenn kein Rezept gefunden wurde
   if (!recipe) {
     return <Error>Rezept nicht gefunden.</Error>;
   }

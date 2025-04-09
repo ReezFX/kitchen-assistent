@@ -57,7 +57,8 @@ exports.getRecipes = async (req, res) => {
 // @access  Private
 exports.getRecipeById = async (req, res) => {
   try {
-    const recipe = await Recipe.findById(req.params.id);
+    // Verwende lean() für bessere Performance bei read-only Operationen
+    const recipe = await Recipe.findById(req.params.id).lean();
     
     if (!recipe) {
       return res.status(404).json({ message: 'Rezept nicht gefunden' });
@@ -71,6 +72,12 @@ exports.getRecipeById = async (req, res) => {
     res.json(recipe);
   } catch (error) {
     console.error('Fehler beim Abrufen des Rezepts:', error);
+    
+    // Besseres Fehlerhandling mit spezifischen Fehlermeldungen
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Ungültige Rezept-ID' });
+    }
+    
     res.status(500).json({ message: 'Serverfehler beim Abrufen des Rezepts' });
   }
 };
