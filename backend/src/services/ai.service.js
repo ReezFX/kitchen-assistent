@@ -7,16 +7,34 @@ class AIService {
   }
 
   async generateRecipe(ingredients, preferences) {
-    const prompt = `Erstelle ein Rezept mit folgenden Zutaten: ${ingredients.join(', ')}. 
+    const prompt = `Erstelle ein ausführliches Rezept mit folgenden Zutaten: ${ingredients.join(', ')}. 
                   Berücksichtige folgende Präferenzen: ${JSON.stringify(preferences)}
-                  Format: Titel, Zutaten mit Mengen, Schritte, Nährwertangaben.`;
+                  
+                  Format:
+                  Titel: [Rezeptname]
+                  
+                  Beschreibung: [Kurze Beschreibung]
+                  
+                  Zutaten:
+                  [Liste der Zutaten mit Mengen]
+                  
+                  Schritte:
+                  1. [Erster Schritt]
+                  2. [Zweiter Schritt]
+                  ...
+                  
+                  Nährwertangaben (ungefähre Angaben pro Portion):
+                  [Nährwertangaben]
+                  
+                  Wichtige Hinweise:
+                  [Eventuelle Tipps]`;
     
     try {
       const result = await this.model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1000
+          maxOutputTokens: 2500
         }
       });
       

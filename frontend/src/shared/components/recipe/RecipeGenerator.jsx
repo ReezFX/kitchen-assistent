@@ -130,6 +130,29 @@ const RecipeGenerator = () => {
     
     try {
       const generatedRecipe = await generateRecipe(ingredients, preferences);
+      
+      // Check if the response might be truncated
+      if (generatedRecipe && generatedRecipe.text) {
+        // Check for potential truncation signs
+        const text = generatedRecipe.text;
+        const lastChar = text.charAt(text.length - 1);
+        const lastFewChars = text.substring(text.length - 5);
+        
+        // If the text ends abruptly with a number followed by a dot, or with a colon, or with markdown
+        const seemsTruncated = (
+          /\d+\.\s*$/.test(lastFewChars) || // Ends with a number followed by a dot
+          lastChar === ':' ||              // Ends with a colon
+          lastFewChars.includes('**') ||   // Ends with markdown
+          (text.match(/\*\*/g) || []).length % 2 !== 0 // Uneven number of ** (unclosed bold)
+        );
+        
+        if (seemsTruncated) {
+          console.warn('Möglicherweise unvollständige API-Antwort erkannt:', lastFewChars);
+          // Append a note for the user
+          generatedRecipe.text += '\n\n[Hinweis: Es könnte sein, dass nicht der gesamte Text angezeigt wird. Bitte passen Sie die Komplexität an oder versuchen Sie es erneut mit weniger Zutaten.]';
+        }
+      }
+      
       setRecipe(generatedRecipe);
     } catch (error) {
       console.error('Fehler bei der Rezeptgenerierung:', error);
@@ -150,6 +173,25 @@ const RecipeGenerator = () => {
       
       console.log("Extrahiere Titel aus:", lines.slice(0, 20));
       
+      // Helper function to clean title from markdown stars
+      const cleanTitle = (title) => {
+        if (!title) return '';
+        
+        // Remove markdown formatting stars at beginning or end
+        let cleanedTitle = title.replace(/^\*\*/, '').replace(/\*\*$/, '');
+        
+        // Remove any remaining markdown formatting (bold, italic, etc)
+        cleanedTitle = cleanedTitle.replace(/\*\*/g, '').replace(/\*/g, '');
+        
+        // Remove backticks (code formatting)
+        cleanedTitle = cleanedTitle.replace(/`/g, '');
+        
+        // Remove any leading/trailing whitespace
+        cleanedTitle = cleanedTitle.trim();
+        
+        return cleanedTitle;
+      };
+      
       // First pass: Look EXACTLY for "Titel:" in any case (HIGHEST PRIORITY)
       let titleFound = false;
       for (let i = 0; i < 40 && i < lines.length; i++) {
@@ -165,7 +207,7 @@ const RecipeGenerator = () => {
             titlePart = line.substring(colonIndex + 1).trim();
             if (titlePart) {
               console.log(`!!! TITEL GEFUNDEN !!! in Zeile ${i}: "${line}" -> Extrahiert: "${titlePart}"`);
-              title = titlePart;
+              title = cleanTitle(titlePart);
               titleFound = true;
               foundExactTitle = true;
               break;
@@ -186,7 +228,7 @@ const RecipeGenerator = () => {
             const titlePart = titleLine.substring(colonIndex).trim();
             if (titlePart) {
               console.log(`!!! TITEL DURCH INCLUDES GEFUNDEN !!! "${titleLine}" -> Extrahiert: "${titlePart}"`);
-              title = titlePart;
+              title = cleanTitle(titlePart);
               titleFound = true;
               foundExactTitle = true;
             }
@@ -222,7 +264,7 @@ const RecipeGenerator = () => {
                 !line.includes('!') && 
                 !line.includes('?')) {
               console.log(`Möglicher Titel gefunden: "${line}"`);
-              title = line;
+              title = cleanTitle(line);  // <- Clean the title
               break;
             }
           }
@@ -247,7 +289,7 @@ const RecipeGenerator = () => {
                 line.length > 5 && line.length < 70 && 
                 !line.includes(':') && !line.toLowerCase().includes('zutaten')) {
               console.log(`Titelmuster 1 gefunden: "${line}"`);
-              title = line;
+              title = cleanTitle(line);  // <- Clean the title
               foundExactTitle = true;
               break;
             }
@@ -266,7 +308,7 @@ const RecipeGenerator = () => {
               !line.toLowerCase().includes('zutaten') &&
               !line.toLowerCase().includes('schritte')) {
             console.log(`Titelmuster 2 gefunden: "${line}"`);
-            title = line;
+            title = cleanTitle(line);  // <- Clean the title
             foundExactTitle = true;
             break;
           }
@@ -289,6 +331,11 @@ const RecipeGenerator = () => {
       }
       
       console.log(`Finaler Titel nach allen Prüfungen: "${title}"`);
+
+      // Final cleaning of the title - ensure all markdown is removed
+      title = cleanTitle(title);
+      console.log(`Finaler Titel nach Bereinigung: "${title}"`);
+      
       // Parse ingredients from recipe text
       let extractedIngredients = [];
       let inIngredients = false;
@@ -512,8 +559,16 @@ const RecipeGenerator = () => {
   const formatRecipeText = (text) => {
     if (!text) return '';
     
+    // Ensure text is not truncated by ensuring any unclosed markdown is fixed
+    let formattedText = text;
+    
+    // Fix any unclosed markdown at the end (like ** without closing **)
+    if ((formattedText.match(/\*\*/g) || []).length % 2 !== 0) {
+      formattedText = formattedText.replace(/\*\*([^*]*)$/, '**$1**');
+    }
+    
     // Format text with bold headlines
-    let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
     // Convert markdown lists to HTML lists
     const lines = formattedText.split('\n');
@@ -637,4 +692,4 @@ const RecipeGenerator = () => {
   );
 };
 
-export default RecipeGenerator;
+export default RecipeGenerator; 
