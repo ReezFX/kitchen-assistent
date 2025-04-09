@@ -18,7 +18,11 @@ const recipeRoutes = require('./routes/recipe.routes');
 const app = express();
 
 // Middleware
-app.use(cors());
+// Configure CORS to allow specific origin and credentials
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow frontend origin
+  credentials: true // Allow cookies/authorization headers
+}));
 
 // Erhöhen der Limits für JSON und URL-encodierte Daten
 app.use(express.json({ limit: '10mb' }));
