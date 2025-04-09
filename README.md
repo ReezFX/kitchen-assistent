@@ -33,9 +33,9 @@ Eine moderne Web-Anwendung, die Hobbyköche mit KI-gestützten Funktionen unters
 - [x] API-Routen für Kochassistenten
 - [x] API-Routen für Übersetzung
 - [x] Authentifizierungsmiddleware
-- [ ] Benutzerregistrierung und Login
-- [ ] Rezeptspeicherung und -verwaltung
-- [ ] Benutzereinstellungen speichern
+- [x] Benutzerregistrierung und Login
+- [x] Rezeptspeicherung und -verwaltung
+- [x] Benutzereinstellungen speichern
 
 ### Frontend
 - [x] Projektstruktur eingerichtet
@@ -47,8 +47,8 @@ Eine moderne Web-Anwendung, die Hobbyköche mit KI-gestützten Funktionen unters
 - [x] Kochassistent mit Chat-Funktionalität
 - [x] Profilseite (Basisversion)
 - [x] Homepage mit Feature-Vorstellung
-- [ ] Benutzerauthentifizierung UI
-- [ ] Gespeicherte Rezepte verwalten
+- [x] Benutzerauthentifizierung UI
+- [x] Gespeicherte Rezepte verwalten
 - [ ] Responsive Design Optimierungen
 
 ### Allgemein

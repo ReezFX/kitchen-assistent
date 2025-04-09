@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useAIService } from '../../hooks/useAIService';
+import { useRecipes } from '../../hooks/useRecipes';
+import { useAuth } from '../../hooks/useAuth';
 
 import Card from '../common/Card';
 import Button from '../common/Button';
@@ -40,6 +42,39 @@ const Error = styled.div`
   margin-bottom: 16px;
 `;
 
+const RecipeDisplay = styled.div`
+  margin-top: 24px;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+`;
+
+const RecipeTitle = styled.h3`
+  font-size: 22px;
+  color: #1f2937;
+  margin-bottom: 16px;
+`;
+
+const RecipeContent = styled.div`
+  white-space: pre-wrap;
+  line-height: 1.6;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+const SuccessMessage = styled.div`
+  color: #10b981;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #ecfdf5;
+  margin-bottom: 16px;
+`;
+
 const RecipeGenerator = () => {
   const [ingredients, setIngredients] = useState([]);
   const [preferences, setPreferences] = useState({
@@ -48,8 +83,11 @@ const RecipeGenerator = () => {
     difficulty: 'medium'
   });
   const [recipe, setRecipe] = useState(null);
+  const [success, setSuccess] = useState('');
   
   const { generateRecipe, isLoading, error } = useAIService();
+  const { createRecipe, loading: saveLoading } = useRecipes();
+  const { isAuthenticated } = useAuth();
 
   const handlePreferenceChange = (e) => {
     const { name, value } = e.target;
@@ -62,6 +100,7 @@ const RecipeGenerator = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (ingredients.length === 0) return;
+    setSuccess('');
     
     try {
       const generatedRecipe = await generateRecipe(ingredients, preferences);
@@ -71,10 +110,43 @@ const RecipeGenerator = () => {
     }
   };
 
+  const handleSaveRecipe = async () => {
+    if (!recipe) return;
+    setSuccess('');
+    
+    try {
+      // Parse title from recipe text (simple approach, could be improved)
+      const lines = recipe.text.split('\n');
+      const title = lines[0].trim();
+      
+      // Create a structured recipe object
+      const recipeData = {
+        title,
+        ingredients: ingredients.map(ing => ({ name: ing, amount: '', unit: '' })),
+        steps: [],
+        cuisine: preferences.cuisine || undefined,
+        dietaryRestrictions: preferences.diet ? [preferences.diet] : [],
+        difficulty: preferences.difficulty,
+        isAIGenerated: true
+      };
+      
+      await createRecipe(recipeData);
+      setSuccess('Rezept erfolgreich gespeichert!');
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess('');
+      }, 3000);
+    } catch (error) {
+      console.error('Fehler beim Speichern des Rezepts:', error);
+    }
+  };
+
   return (
     <Card title="Personalisiertes Rezept erstellen">
       <Form onSubmit={handleSubmit}>
         {error && <Error>{error}</Error>}
+        {success && <SuccessMessage>{success}</SuccessMessage>}
         
         <div>
           <h4>Verfügbare Zutaten auswählen</h4>
@@ -129,10 +201,21 @@ const RecipeGenerator = () => {
       {isLoading && <Loading>Rezept wird generiert...</Loading>}
       
       {recipe && !isLoading && (
-        <div>
-          <h3>Dein Rezept</h3>
-          <pre>{recipe.text}</pre>
-        </div>
+        <RecipeDisplay>
+          <RecipeTitle>Dein Rezept</RecipeTitle>
+          <RecipeContent>{recipe.text}</RecipeContent>
+          
+          {isAuthenticated && (
+            <ButtonGroup>
+              <Button 
+                onClick={handleSaveRecipe}
+                disabled={saveLoading}
+              >
+                {saveLoading ? 'Speichern...' : 'Rezept speichern'}
+              </Button>
+            </ButtonGroup>
+          )}
+        </RecipeDisplay>
       )}
     </Card>
   );

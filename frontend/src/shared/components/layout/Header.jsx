@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import Button from '../common/Button';
 
 const HeaderContainer = styled.header`
   background-color: white;
@@ -23,6 +25,7 @@ const Logo = styled(Link)`
 
 const Nav = styled.nav`
   display: flex;
+  align-items: center;
   gap: 24px;
 `;
 
@@ -41,7 +44,27 @@ const NavLink = styled(Link)`
   }
 `;
 
+const UserContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const UserInfo = styled.div`
+  font-weight: 500;
+  font-size: 14px;
+  color: #4b5563;
+`;
+
 const Header = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <HeaderContainer>
       <Logo to="/">
@@ -53,7 +76,29 @@ const Header = () => {
         <NavLink to="/">Home</NavLink>
         <NavLink to="/recipes">Rezepte</NavLink>
         <NavLink to="/cooking-assistant">Kochassistent</NavLink>
-        <NavLink to="/profile">Profil</NavLink>
+        
+        {isAuthenticated ? (
+          <UserContainer>
+            <NavLink to="/profile">Profil</NavLink>
+            <UserInfo>{user.username}</UserInfo>
+            <Button 
+              variant="secondary" 
+              onClick={handleLogout}
+            >
+              Abmelden
+            </Button>
+          </UserContainer>
+        ) : (
+          <>
+            <NavLink to="/login">Anmelden</NavLink>
+            <Button 
+              as={Link} 
+              to="/register"
+            >
+              Registrieren
+            </Button>
+          </>
+        )}
       </Nav>
     </HeaderContainer>
   );
