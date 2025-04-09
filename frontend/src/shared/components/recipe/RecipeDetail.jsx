@@ -339,6 +339,7 @@ const RecipeDetail = () => {
   const MAX_ATTEMPTS = 1; // Only try once to prevent flickering
   const [imageFile, setImageFile] = useState(null);
   const [isImageUpdating, setIsImageUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Kochassistent States
   const [messages, setMessages] = useState([
@@ -695,6 +696,15 @@ const RecipeDetail = () => {
     }
   };
   
+  // Toggle edit mode
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+    if (isEditing) {
+      // Reset image file when exiting edit mode without saving
+      setImageFile(null);
+    }
+  };
+  
   // Zeige Loading-Zustand
   if (isLoading) {
     return (
@@ -746,7 +756,15 @@ const RecipeDetail = () => {
     <Container>
       <Card>
         <RecipeHeader>
-          <RecipeTitle>{recipe.title}</RecipeTitle>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <RecipeTitle>{recipe.title}</RecipeTitle>
+            <Button 
+              onClick={toggleEditMode} 
+              variant={isEditing ? "secondary" : "primary"}
+            >
+              {isEditing ? 'Abbrechen' : 'Bearbeiten'}
+            </Button>
+          </div>
           
           {recipe.image && recipe.image.data && (
             <RecipeImage>
@@ -757,31 +775,33 @@ const RecipeDetail = () => {
             </RecipeImage>
           )}
           
-          <ImageSection>
-            <h3>Rezeptbild</h3>
-            <ImageUpload 
-              label="Bild hochladen oder ändern"
-              onChange={handleImageChange}
-              currentImage={recipe.image && recipe.image.data ? 
-                `data:${recipe.image.contentType};base64,${recipe.image.data}` : ''}
-            />
-            
-            {imageFile && (
-              <Button 
-                onClick={handleImageUpload}
-                disabled={isImageUpdating}
-                variant="primary"
-              >
-                {isImageUpdating ? 'Wird hochgeladen...' : 'Bild speichern'}
-              </Button>
-            )}
-            
-            {localError && (
-              <div style={{ color: '#ef4444', marginTop: '10px', fontSize: '14px' }}>
-                {localError}
-              </div>
-            )}
-          </ImageSection>
+          {isEditing && (
+            <ImageSection>
+              <h3>Rezeptbild</h3>
+              <ImageUpload 
+                label="Bild hochladen oder ändern"
+                onChange={handleImageChange}
+                currentImage={recipe.image && recipe.image.data ? 
+                  `data:${recipe.image.contentType};base64,${recipe.image.data}` : ''}
+              />
+              
+              {imageFile && (
+                <Button 
+                  onClick={handleImageUpload}
+                  disabled={isImageUpdating}
+                  variant="primary"
+                >
+                  {isImageUpdating ? 'Wird hochgeladen...' : 'Bild speichern'}
+                </Button>
+              )}
+              
+              {localError && (
+                <div style={{ color: '#ef4444', marginTop: '10px', fontSize: '14px' }}>
+                  {localError}
+                </div>
+              )}
+            </ImageSection>
+          )}
           
           <TagsContainer>
             {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}
