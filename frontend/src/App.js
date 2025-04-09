@@ -12,6 +12,7 @@ import ProfilePage from './modules/user-profile/ProfilePage';
 import LoginPage from './modules/auth/LoginPage';
 import RegisterPage from './modules/auth/RegisterPage';
 import NotFoundPage from './shared/components/NotFoundPage';
+import RecipeDetail from './shared/components/recipe/RecipeDetail';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/recipes" element={<RecipesPage />} />
+              <Route path="/recipes/:id" element={<RecipeDetail />} />
               <Route path="/cooking-assistant" element={<CookingAssistantPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>

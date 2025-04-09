@@ -69,10 +69,20 @@ const ButtonGroup = styled.div`
 
 const SuccessMessage = styled.div`
   color: #10b981;
-  padding: 10px;
+  padding: 12px 16px;
   border-radius: 8px;
   background-color: #ecfdf5;
   margin-bottom: 16px;
+  border: 1px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  
+  &::before {
+    content: '✓';
+    margin-right: 8px;
+    font-weight: bold;
+  }
 `;
 
 const RecipeGenerator = () => {
@@ -119,24 +129,55 @@ const RecipeGenerator = () => {
       const lines = recipe.text.split('\n');
       const title = lines[0].trim();
       
+      // Parse steps from recipe text (basic implementation)
+      let steps = [];
+      let inSteps = false;
+      
+      // Versuche, Schritte aus dem Rezepttext zu extrahieren
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Prüfe auf Abschnitte
+        if (line.toLowerCase().includes('zubereitung') || 
+            line.toLowerCase().includes('anleitung') || 
+            line.toLowerCase().includes('schritte')) {
+          inSteps = true;
+          continue;
+        }
+        
+        // Wenn wir im Schritte-Abschnitt sind und eine nicht-leere Zeile haben
+        if (inSteps && line && !line.toLowerCase().includes('nährwerte') && !line.toLowerCase().includes('zutaten')) {
+          // Entferne Nummerierungen am Anfang (1., 2., etc.)
+          const stepText = line.replace(/^\d+\.\s*/, '').trim();
+          if (stepText) {
+            steps.push(stepText);
+          }
+        }
+        
+        // Ende der Schritte, wenn ein neuer Abschnitt beginnt
+        if (inSteps && (line.toLowerCase().includes('nährwerte') || line.toLowerCase().includes('hinweis'))) {
+          inSteps = false;
+        }
+      }
+      
       // Create a structured recipe object
       const recipeData = {
         title,
         ingredients: ingredients.map(ing => ({ name: ing, amount: '', unit: '' })),
-        steps: [],
+        steps: steps,
         cuisine: preferences.cuisine || undefined,
         dietaryRestrictions: preferences.diet ? [preferences.diet] : [],
         difficulty: preferences.difficulty,
         isAIGenerated: true
       };
       
-      await createRecipe(recipeData);
+      const savedRecipe = await createRecipe(recipeData);
       setSuccess('Rezept erfolgreich gespeichert!');
       
-      // Hide success message after 3 seconds
+      // Hide success message after 5 seconds
       setTimeout(() => {
         setSuccess('');
-      }, 3000);
+      }, 5000);
     } catch (error) {
       console.error('Fehler beim Speichern des Rezepts:', error);
     }
