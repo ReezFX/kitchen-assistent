@@ -7,7 +7,6 @@ import { AuthProvider } from './shared/context/AuthContext';
 // Pages
 import HomePage from './modules/home/HomePage';
 import RecipesPage from './modules/recipes/RecipesPage';
-import CookingAssistantPage from './modules/cooking-guide/CookingAssistantPage';
 import ProfilePage from './modules/user-profile/ProfilePage';
 import LoginPage from './modules/auth/LoginPage';
 import RegisterPage from './modules/auth/RegisterPage';
@@ -29,7 +28,6 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/recipes" element={<RecipesPage />} />
               <Route path="/recipes/:id" element={<RecipeDetail />} />
-              <Route path="/cooking-assistant" element={<CookingAssistantPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
             

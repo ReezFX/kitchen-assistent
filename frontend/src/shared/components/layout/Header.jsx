@@ -75,7 +75,6 @@ const Header = () => {
       <Nav>
         <NavLink to="/">Home</NavLink>
         <NavLink to="/recipes">Rezepte</NavLink>
-        <NavLink to="/cooking-assistant">Kochassistent</NavLink>
         
         {isAuthenticated ? (
           <UserContainer>

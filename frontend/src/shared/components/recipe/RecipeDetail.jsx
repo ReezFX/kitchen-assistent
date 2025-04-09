@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useRecipes } from '../../hooks/useRecipes';
+import { useAIService } from '../../hooks/useAIService';
 import Card from '../common/Card';
 import Button from '../common/Button';
 
@@ -219,6 +220,95 @@ const Error = styled.div`
   margin-top: 20px;
 `;
 
+// Chat Komponenten
+const ChatContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  margin-top: 32px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+`;
+
+const MessagesContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+`;
+
+const MessageBubble = styled.div`
+  padding: 12px 16px;
+  border-radius: 16px;
+  max-width: 80%;
+  word-break: break-word;
+  line-height: 1.5;
+  
+  ${props => props.isUser ? `
+    align-self: flex-end;
+    background-color: #4f46e5;
+    color: white;
+    border-bottom-right-radius: 4px;
+  ` : `
+    align-self: flex-start;
+    background-color: #f3f4f6;
+    color: #1f2937;
+    border-bottom-left-radius: 4px;
+    
+    & strong, & b {
+      font-weight: 600;
+    }
+    
+    & ul {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      padding-left: 20px;
+    }
+    
+    & li {
+      margin-bottom: 4px;
+    }
+  `}
+`;
+
+const InputContainer = styled.form`
+  display: flex;
+  gap: 8px;
+  padding: 16px 0;
+`;
+
+const StyledInput = styled.input`
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 24px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+  }
+`;
+
+const AssistantSection = styled.div`
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+`;
+
+const AssistantTitle = styled.h2`
+  font-size: 22px;
+  margin-bottom: 16px;
+  color: #1f2937;
+  font-weight: 600;
+`;
+
 const RecipeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -229,6 +319,14 @@ const RecipeDetail = () => {
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const attemptRef = useRef(0);
   const MAX_ATTEMPTS = 1; // Only try once to prevent flickering
+  
+  // Kochassistent States
+  const [messages, setMessages] = useState([
+    { id: 1, text: 'Hallo! Ich bin dein Kochassistent. Stelle mir Fragen zu diesem Rezept.', isUser: false }
+  ]);
+  const [input, setInput] = useState('');
+  const messagesEndRef = useRef(null);
+  const { getAssistance, isLoading: assistantLoading } = useAIService();
   
   // Fetch recipe on component mount
   const fetchRecipe = useCallback(async () => {
@@ -362,6 +460,116 @@ const RecipeDetail = () => {
     }
     
     return formattedText;
+  };
+  
+  // Automatisches Scrollen, wenn neue Nachrichten ankommen
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
+  // Hilfsfunktion zum Erstellen eines Rezeptkontexts aus dem aktuellen Rezept
+  const createRecipeContext = (recipe) => {
+    if (!recipe) return '';
+    
+    let context = `Rezept: ${recipe.title}\n\n`;
+    
+    if (recipe.ingredients && recipe.ingredients.length > 0) {
+      context += "Zutaten:\n";
+      recipe.ingredients.forEach(ing => {
+        const amount = ing.amount ? `${ing.amount} ${ing.unit || ''}` : '';
+        context += `- ${amount} ${ing.name}\n`;
+      });
+      context += "\n";
+    }
+    
+    if (recipe.steps && recipe.steps.length > 0) {
+      context += "Zubereitung:\n";
+      recipe.steps.forEach((step, index) => {
+        // Entferne HTML-Tags aus den Schritten
+        const cleanedStep = step.replace(/<[^>]*>/g, '');
+        context += `${index + 1}. ${cleanedStep}\n`;
+      });
+    }
+    
+    return context;
+  };
+  
+  // Formatierungsfunktion für Assistentenantworten hinzufügen
+  const formatAssistantText = (text) => {
+    if (!text) return '';
+    
+    // Format text with bold headlines
+    let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert bullet points (* item) to list items
+    let lines = formattedText.split('\n');
+    let isList = false;
+    let resultLines = [];
+    let listContent = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('*') && !line.startsWith('**')) {
+        if (!isList) {
+          isList = true;
+          listContent = '<ul>';
+        }
+        // Extract text after the asterisk, trim it, and add to list
+        const listItemText = line.substring(1).trim();
+        listContent += `<li>${listItemText}</li>`;
+      } else {
+        if (isList) {
+          // End current list
+          isList = false;
+          listContent += '</ul>';
+          resultLines.push(listContent);
+        }
+        resultLines.push(line);
+      }
+    }
+    
+    // If we had a list at the end of text, close it
+    if (isList) {
+      listContent += '</ul>';
+      resultLines.push(listContent);
+    }
+    
+    return resultLines.join('\n');
+  };
+  
+  // Nachricht senden
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (input.trim() === '' || !recipe) return;
+    
+    // Benutzernachricht hinzufügen
+    const userMessage = { id: Date.now(), text: input, isUser: true };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    
+    try {
+      // Rezeptkontext erstellen
+      const recipeContext = createRecipeContext(recipe);
+      
+      // Antwort vom AI-Service holen
+      const assistantResponse = await getAssistance(input, recipeContext);
+      
+      // Assistentenantwort hinzufügen
+      setMessages(prev => [
+        ...prev, 
+        { id: Date.now() + 1, text: assistantResponse, isUser: false }
+      ]);
+    } catch (error) {
+      console.error('Fehler beim Kochassistenten:', error);
+      setMessages(prev => [
+        ...prev, 
+        { 
+          id: Date.now() + 1, 
+          text: 'Entschuldigung, ich konnte deine Frage nicht beantworten. Bitte versuche es später noch einmal.', 
+          isUser: false 
+        }
+      ]);
+    }
   };
   
   // Zeige Loading-Zustand
@@ -506,6 +714,43 @@ const RecipeDetail = () => {
               </NutritionGrid>
             </NutritionSection>
           </Section>
+        )}
+        
+        {recipe && (
+          <AssistantSection>
+            <AssistantTitle>Kochassistent</AssistantTitle>
+            <p>Stelle Fragen zu diesem Rezept - der Assistent hilft dir bei der Zubereitung.</p>
+            
+            <ChatContainer>
+              <MessagesContainer>
+                {messages.map(message => (
+                  <MessageBubble key={message.id} isUser={message.isUser}>
+                    {message.isUser ? 
+                      message.text : 
+                      <div dangerouslySetInnerHTML={{ __html: formatAssistantText(message.text) }} />
+                    }
+                  </MessageBubble>
+                ))}
+                <div ref={messagesEndRef} />
+              </MessagesContainer>
+              
+              <InputContainer onSubmit={handleSendMessage}>
+                <StyledInput
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Stelle eine Frage zum Rezept..."
+                  disabled={assistantLoading}
+                />
+                <Button 
+                  type="submit" 
+                  disabled={input.trim() === '' || assistantLoading}
+                >
+                  {assistantLoading ? 'Sendet...' : 'Senden'}
+                </Button>
+              </InputContainer>
+            </ChatContainer>
+          </AssistantSection>
         )}
         
         <ButtonContainer>
