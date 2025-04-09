@@ -82,9 +82,47 @@ const Error = styled.div`
   margin-top: 20px;
 `;
 
+// Neue Komponente für das Thumbnail
+const ThumbnailContainer = styled.div`
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  position: relative;
+  background-color: #f3f4f6;
+`;
+
+const RecipeThumbnail = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+
+  ${RecipeCard}:hover & {
+    transform: scale(1.05);
+  }
+`;
+
+const PlaceholderThumbnail = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 36px;
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+`;
+
 const SavedRecipesList = () => {
-  const { recipes, loading, error, deleteRecipe } = useRecipes();
   const navigate = useNavigate();
+  const { recipes, deleteRecipe, loading, error } = useRecipes();
   
   const handleViewRecipe = (id) => {
     navigate(`/recipes/${id}`);
@@ -100,7 +138,7 @@ const SavedRecipesList = () => {
     }
   };
   
-  // Helper function to get difficulty in German
+  // Helper function to get text for difficulty
   const getDifficultyText = (difficulty) => {
     switch (difficulty) {
       case 'easy': return 'Einfach';
@@ -122,7 +160,7 @@ const SavedRecipesList = () => {
     return (
       <EmptyState>
         <EmptyStateIcon>📝</EmptyStateIcon>
-        <h3>Keine gespeicherten Rezepte</h3>
+        <h3>Keine Rezepte gefunden</h3>
         <p>Du hast noch keine Rezepte gespeichert. Erstelle dein erstes Rezept!</p>
       </EmptyState>
     );
@@ -132,6 +170,18 @@ const SavedRecipesList = () => {
     <RecipeGrid>
       {recipes.map((recipe) => (
         <RecipeCard key={recipe._id}>
+          {/* Thumbnail hinzufügen */}
+          <ThumbnailContainer>
+            {recipe.image && recipe.image.data ? (
+              <RecipeThumbnail 
+                src={`data:${recipe.image.contentType};base64,${recipe.image.data}`} 
+                alt={recipe.title}
+              />
+            ) : (
+              <PlaceholderThumbnail>🍽️</PlaceholderThumbnail>
+            )}
+          </ThumbnailContainer>
+          
           <RecipeTitle>{recipe.title}</RecipeTitle>
           
           <RecipeInfo>
@@ -139,12 +189,12 @@ const SavedRecipesList = () => {
             {recipe.cuisine && <div>Küche: {recipe.cuisine}</div>}
           </RecipeInfo>
           
-          <div>
+          <TagsContainer>
             {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}
             {recipe.dietaryRestrictions && recipe.dietaryRestrictions.map((diet, index) => (
               <Tag key={index}>{diet}</Tag>
             ))}
-          </div>
+          </TagsContainer>
           
           <ButtonContainer>
             <Button 
