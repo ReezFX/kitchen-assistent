@@ -1,0 +1,333 @@
+/* GlowingEffect component styles */
+
+/* Core Tailwind-like utility classes */
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.-inset-px {
+  inset: -1px;
+}
+
+.inset-0 {
+  inset: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Rounded utilities */
+.rounded-\[inherit\] {
+  border-radius: inherit;
+}
+
+/* Border utilities */
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+
+.border-white {
+  border-color: white;
+}
+
+.border-border {
+  border-color: var(--color-gray-200); /* Using CSS variable instead of hardcoded color */
+}
+
+/* Display utilities */
+.\!block {
+  display: block !important;
+}
+
+.\!hidden {
+  display: none !important;
+}
+
+/* Background utilities */
+.bg-background {
+  background-color: var(--color-background); /* Using CSS variable instead of hardcoded color */
+}
+
+.bg-muted {
+  background-color: var(--color-gray-100); /* Using CSS variable instead of hardcoded color */
+}
+
+/* Text utilities */
+.text-foreground {
+  color: var(--color-text); /* Using CSS variable instead of hardcoded color */
+}
+
+.text-muted-foreground {
+  color: var(--color-text-secondary); /* Using CSS variable instead of hardcoded color */
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Flexbox utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+/* Grid utilities */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-rows-none {
+  grid-template-rows: none;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.space-y-3 > * + * {
+  margin-top: 0.75rem;
+}
+
+/* Size utilities */
+.h-4 {
+  height: 1rem;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-fit {
+  width: fit-content;
+}
+
+.min-h-\[14rem\] {
+  min-height: 14rem;
+}
+
+/* Padding utilities */
+.p-2 {
+  padding: 0.5rem;
+}
+
+.p-3 {
+  padding: 0.75rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.pt-0\.5 {
+  padding-top: 0.125rem;
+}
+
+/* Typography utilities */
+.font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.leading-\[1\.125rem\] {
+  line-height: 1.125rem;
+}
+
+.leading-\[1\.375rem\] {
+  line-height: 1.375rem;
+}
+
+.leading-\[1\.875rem\] {
+  line-height: 1.875rem;
+}
+
+.tracking-\[-0\.04em\] {
+  letter-spacing: -0.04em;
+}
+
+/* Effects utilities */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* List utilities */
+.list-none {
+  list-style-type: none;
+}
+
+/* Glow specific utilities */
+.glow {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+/* Media queries */
+@media (min-width: 768px) {
+  .md\:grid-cols-12 {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  
+  .md\:grid-rows-3 {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+  
+  .md\:p-3 {
+    padding: 0.75rem;
+  }
+  
+  .md\:p-6 {
+    padding: 1.5rem;
+  }
+  
+  .md\:rounded-\[1\.5rem\] {
+    border-radius: 1.5rem;
+  }
+  
+  .md\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  .md\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  
+  .md\:leading-\[1\.375rem\] {
+    line-height: 1.375rem;
+  }
+  
+  .md\:leading-\[1\.875rem\] {
+    line-height: 1.875rem;
+  }
+  
+  .md\:\[grid-area\:1\/1\/2\/7\] {
+    grid-area: 1/1/2/7;
+  }
+  
+  .md\:\[grid-area\:1\/7\/2\/13\] {
+    grid-area: 1/7/2/13;
+  }
+  
+  .md\:\[grid-area\:2\/1\/3\/7\] {
+    grid-area: 2/1/3/7;
+  }
+  
+  .md\:\[grid-area\:2\/7\/3\/13\] {
+    grid-area: 2/7/3/13;
+  }
+  
+  .md\:\[grid-area\:3\/1\/4\/13\] {
+    grid-area: 3/1/4/13;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:gap-4 {
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:max-h-\[34rem\] {
+    max-height: 34rem;
+  }
+  
+  .xl\:grid-rows-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  
+  .xl\:\[grid-area\:1\/1\/2\/5\] {
+    grid-area: 1/1/2/5;
+  }
+  
+  .xl\:\[grid-area\:2\/1\/3\/5\] {
+    grid-area: 2/1/3/5;
+  }
+  
+  .xl\:\[grid-area\:1\/5\/3\/8\] {
+    grid-area: 1/5/3/8;
+  }
+  
+  .xl\:\[grid-area\:1\/8\/2\/13\] {
+    grid-area: 1/8/2/13;
+  }
+  
+  .xl\:\[grid-area\:2\/8\/3\/13\] {
+    grid-area: 2/8/3/13;
+  }
+} 

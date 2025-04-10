@@ -26,19 +26,19 @@ const RecipeCard = styled(Card)`
 const RecipeTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 8px;
-  color: #1f2937;
+  color: var(--color-text-primary);
 `;
 
 const RecipeInfo = styled.div`
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 `;
 
 const Tag = styled.span`
   display: inline-block;
-  background-color: #e5e7eb;
-  color: #4b5563;
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-600);
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 12px;
@@ -55,7 +55,7 @@ const ButtonContainer = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 40px;
-  background-color: #f9fafb;
+  background-color: var(--color-gray-50);
   border-radius: 8px;
   margin-top: 20px;
 `;
@@ -71,14 +71,14 @@ const Loading = styled.div`
   align-items: center;
   padding: 40px;
   font-weight: 500;
-  color: #4f46e5;
+  color: var(--color-primary);
 `;
 
 const Error = styled.div`
-  color: #ef4444;
+  color: var(--color-danger);
   padding: 16px;
   border-radius: 8px;
-  background-color: #fee2e2;
+  background-color: var(--color-danger-hover);
   margin-top: 20px;
 `;
 
@@ -90,7 +90,7 @@ const ThumbnailContainer = styled.div`
   border-radius: 8px;
   margin-bottom: 12px;
   position: relative;
-  background-color: #f3f4f6;
+  background-color: var(--color-gray-100);
 `;
 
 const RecipeThumbnail = styled.img`
@@ -110,7 +110,7 @@ const PlaceholderThumbnail = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--color-gray-400);
   font-size: 36px;
 `;
 

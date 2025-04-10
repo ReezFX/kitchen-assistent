@@ -12,30 +12,30 @@ const Label = styled.label`
   font-size: 14px;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-secondary);
 `;
 
 const StyledInput = styled.input`
   padding: 10px 12px;
-  border: 1px solid ${props => props.error ? '#ef4444' : '#d1d5db'};
+  border: 1px solid ${props => props.error ? 'var(--color-danger)' : 'var(--color-gray-300)'};
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.2s ease-in-out;
 
   &:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(255, 132, 51, 0.1);
   }
 
   &:disabled {
-    background-color: #f3f4f6;
+    background-color: var(--color-gray-100);
     cursor: not-allowed;
   }
 `;
 
 const ErrorMessage = styled.span`
-  color: #ef4444;
+  color: var(--color-danger);
   font-size: 12px;
   margin-top: 4px;
 `;

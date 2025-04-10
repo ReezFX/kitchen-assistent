@@ -550,7 +550,7 @@ const ButtonContainer = styled.div`
   align-items: center;
   margin-top: 40px;
   padding-top: 24px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--color-gray-200);
 `;
 
 // Reusable button styles (can replace ../common/Button if needed)
@@ -571,25 +571,25 @@ const ActionButton = styled.button`
       case 'danger':
         return `
           background-color: transparent;
-          color: #ff3b30; // Apple red
+          color: var(--color-danger); 
           &:hover {
-            background-color: rgba(255, 59, 48, 0.1);
+            background-color: var(--color-danger-hover);
           }
         `;
       case 'primary': // Example primary style
         return `
-          background-color: #007aff;
+          background-color: var(--color-primary);
           color: white;
           &:hover {
-            background-color: #005ecb;
+            background-color: var(--color-primary-dark);
           }
         `;
       default: // Secondary / Default
         return `
-          background-color: #e5e5e5;
-          color: #007aff;
+          background-color: var(--color-gray-200);
+          color: var(--color-primary);
           &:hover {
-            background-color: #dcdcdc;
+            background-color: var(--color-gray-300);
           }
         `;
     }
@@ -601,7 +601,7 @@ const ActionButton = styled.button`
 const CookModeContainer = styled.div`
   position: fixed;
   inset: 0;
-  background-color: #ffffff; // White background
+  background-color: var(--color-background); 
   z-index: 1000;
   padding: 0; // No padding on container
   display: flex;
@@ -613,8 +613,8 @@ const CookModeHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e5e5;
-  background-color: rgba(255, 255, 255, 0.95); // Slightly transparent white
+  border-bottom: 1px solid var(--color-gray-200);
+  background-color: var(--color-background-translucent); 
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -624,7 +624,7 @@ const CookModeHeader = styled.div`
 const CookModeTitle = styled.h2`
   font-size: 20px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: var(--color-text);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -634,7 +634,7 @@ const CookModeTitle = styled.h2`
 const CookModeCloseButton = styled.button`
   background: none;
   border: none;
-  color: #007aff;
+  color: var(--color-primary);
   font-size: 17px;
   font-weight: 500;
   cursor: pointer;
@@ -654,7 +654,7 @@ const CookModeStep = styled.div`
 const StepNumber = styled.div`
   font-size: 17px;
   font-weight: 600;
-  color: #636366; // Secondary text
+  color: var(--color-text-secondary); 
   margin-bottom: 12px;
   text-transform: uppercase;
 `;
@@ -665,7 +665,7 @@ const StepContent = styled.div`
   font-size: 22px; // Larger font for cooking
   line-height: 1.6;
   margin-bottom: 30px;
-  color: #1d1d1f;
+  color: var(--color-text);
   
   .step-title {
     font-size: 26px;
@@ -713,8 +713,8 @@ const CookModeNavButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   border: none;
-  background-color: #f2f2f7; // Light gray background
-  color: #007aff; // Blue text
+  background-color: var(--color-gray-100); 
+  color: var(--color-primary); 
 
   &:disabled {
     opacity: 0.4;
@@ -722,17 +722,17 @@ const CookModeNavButton = styled.button`
   }
   
   &:hover:not(:disabled) {
-    background-color: #e5e5e5;
+    background-color: var(--color-gray-200);
   }
 
   &.next {
-    background-color: #007aff;
+    background-color: var(--color-primary);
     color: white;
     &:hover:not(:disabled) {
-      background-color: #005ecb;
+      background-color: var(--color-primary-dark);
     }
      &:disabled {
-      background-color: #a0c7ff; // Lighter blue when disabled
+      background-color: var(--color-primary-light); 
       color: white;
       opacity: 1;
     }
@@ -1069,23 +1069,32 @@ const RecipeDetail = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
+      // Get the token from localStorage with the correct key 'token'
+      const token = localStorage.getItem('token');
+      
       const response = await fetch(`${apiUrl}/recipes/${id}/image`, {
           method: 'POST',
           body: formData,
-          credentials: 'include' // Or handle auth token if needed
+          credentials: 'include',
+          headers: {
+            // Include authorization header if token exists
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
       });
 
       if (!response.ok) {
           const errorData = await response.text();
-          throw new Error(`Upload fehlgeschlagen: ${response.status} ${errorData}`);
+          // Don't use Error constructor, just set the error message directly
+          throw `Upload fehlgeschlagen: ${response.status} ${errorData}`;
       }
 
-      const updatedData = await response.json(); // Or use updateRecipe if it returns the updated recipe
-      setRecipe(processRecipeData(updatedData)); // Re-process data
+      const updatedData = await response.json();
+      setRecipe(processRecipeData(updatedData));
       setImageFile(null);
     } catch (err) {
       console.error('Fehler beim Hochladen des Bildes:', err);
-      setLocalError(`Fehler beim Hochladen: ${err.message}`);
+      setLocalError(typeof err === 'string' ? err : 'Fehler beim Hochladen des Bildes');
     } finally {
       setIsImageUpdating(false);
     }

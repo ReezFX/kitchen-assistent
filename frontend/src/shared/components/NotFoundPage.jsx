@@ -15,19 +15,19 @@ const Container = styled.div`
 const ErrorCode = styled.h1`
   font-size: 120px;
   margin: 0;
-  color: #4f46e5;
+  color: var(--color-primary);
   font-weight: 700;
 `;
 
 const Title = styled.h2`
   font-size: 24px;
   margin: 16px 0;
-  color: #1f2937;
+  color: var(--color-text-primary);
 `;
 
 const Message = styled.p`
   font-size: 16px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin-bottom: 24px;
   max-width: 500px;
 `;

@@ -17,62 +17,61 @@ const StyledButton = styled.button`
     switch (variant) {
       case 'primary':
         return `
-          background-color: #4f46e5;
+          background-color: var(--color-primary);
           color: white;
           border: none;
           
           &:hover {
-            background-color: #4338ca;
+            filter: brightness(0.9);
           }
           
           &:disabled {
-            background-color: #c7d2fe;
+            opacity: 0.6;
             cursor: not-allowed;
           }
         `;
       case 'secondary':
         return `
           background-color: white;
-          color: #4f46e5;
-          border: 1px solid #4f46e5;
+          color: var(--color-secondary);
+          border: 1px solid var(--color-secondary);
           
           &:hover {
-            background-color: #f3f4f6;
+            background-color: var(--color-paper);
           }
           
           &:disabled {
-            color: #9ca3af;
-            border-color: #9ca3af;
+            opacity: 0.6;
             cursor: not-allowed;
           }
         `;
       case 'danger':
         return `
-          background-color: #ef4444;
+          background-color: var(--color-danger);
           color: white;
           border: none;
           
           &:hover {
-            background-color: #dc2626;
+            filter: brightness(0.9);
           }
           
           &:disabled {
-            background-color: #fca5a5;
+            opacity: 0.6;
             cursor: not-allowed;
           }
         `;
       default:
         return `
-          background-color: #4f46e5;
+          background-color: var(--color-primary);
           color: white;
           border: none;
           
           &:hover {
-            background-color: #4338ca;
+            filter: brightness(0.9);
           }
           
           &:disabled {
-            background-color: #c7d2fe;
+            opacity: 0.6;
             cursor: not-allowed;
           }
         `;

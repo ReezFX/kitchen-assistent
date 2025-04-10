@@ -27,14 +27,14 @@ const IngredientTag = styled.div`
   gap: 6px;
   padding: 4px 8px;
   border-radius: 16px;
-  background-color: #e5e7eb;
+  background-color: var(--color-gray-200);
   font-size: 14px;
 `;
 
 const RemoveButton = styled.button`
   border: none;
   background: none;
-  color: #6b7280;
+  color: var(--color-gray-500);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -43,16 +43,16 @@ const RemoveButton = styled.button`
   font-size: 16px;
   
   &:hover {
-    color: #ef4444;
+    color: var(--color-danger);
   }
 `;
 
 const EmptyState = styled.div`
   padding: 16px;
   text-align: center;
-  background-color: #f9fafb;
+  background-color: var(--color-gray-50);
   border-radius: 8px;
-  color: #6b7280;
+  color: var(--color-gray-500);
   font-size: 14px;
 `;
 

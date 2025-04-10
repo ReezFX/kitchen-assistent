@@ -19,12 +19,12 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Routes - Accessible without login */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
-            {/* Protected Routes */}
+            {/* Protected Routes - Require authentication */}
             <Route element={<ProtectedRoute />}>
               <Route path="/recipes" element={<RecipesPage />} />
               <Route path="/recipes/:id" element={<RecipeDetail />} />

@@ -33,40 +33,40 @@ const Loading = styled.div`
   align-items: center;
   padding: 20px;
   font-weight: 500;
-  color: #4f46e5;
+  color: var(--color-primary);
 `;
 
 const Error = styled.div`
-  color: #ef4444;
+  color: var(--color-danger);
   padding: 10px;
   border-radius: 8px;
-  background-color: #fee2e2;
+  background-color: var(--color-danger-hover);
   margin-bottom: 16px;
 `;
 
 const RecipeDisplay = styled.div`
   margin-top: 24px;
   padding: 20px;
-  background-color: #f9fafb;
+  background-color: var(--color-gray-50);
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-gray-200);
 `;
 
 const RecipeTitle = styled.h3`
   font-size: 22px;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin-bottom: 16px;
 `;
 
 const ExtractedTitle = styled.div`
   margin-top: 10px;
   padding: 8px 12px;
-  background-color: #edf2f7;
+  background-color: var(--color-gray-100);
   border-radius: 6px;
   font-size: 14px;
-  color: #4a5568;
+  color: var(--color-text-secondary);
   margin-bottom: 10px;
-  border-left: 3px solid #4f46e5;
+  border-left: 3px solid var(--color-primary);
 `;
 
 const RecipeContent = styled.div`
@@ -85,12 +85,12 @@ const ButtonGroup = styled.div`
 `;
 
 const SuccessMessage = styled.div`
-  color: #10b981;
+  color: var(--color-success, #10b981);
   padding: 12px 16px;
   border-radius: 8px;
-  background-color: #ecfdf5;
+  background-color: var(--color-success-bg, #ecfdf5);
   margin-bottom: 16px;
-  border: 1px solid #a7f3d0;
+  border: 1px solid var(--color-success-border, #a7f3d0);
   display: flex;
   align-items: center;
   font-weight: 500;

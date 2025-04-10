@@ -1,3 +1,64 @@
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Food-themed color palette in HSL */
+  --color-blue-gray: hsla(210, 50%, 60%, 1);  /* Cool accent color */
+  --color-maize: hsla(54, 100%, 73%, 1);      /* Bright yellow/gold */
+  --color-pumpkin: hsla(23, 100%, 63%, 1);    /* Vibrant orange */
+  --color-vermilion: hsla(1, 100%, 61%, 1);   /* Bright red-orange */
+  --color-redwood: hsla(354, 45%, 44%, 1);    /* Deep burgundy */
+  
+  /* Semantic colors */
+  --color-primary: var(--color-pumpkin);
+  --color-primary-dark: hsla(23, 100%, 53%, 1); /* Darker orange */
+  --color-primary-light: hsla(23, 100%, 73%, 1); /* Lighter orange */
+  --color-secondary: var(--color-blue-gray);
+  --color-accent: var(--color-maize);
+  --color-danger: var(--color-vermilion);
+  --color-danger-hover: hsla(1, 100%, 61%, 0.1); /* Light red for hover states */
+  --color-dark: var(--color-redwood);
+  
+  /* Success colors */
+  --color-success: #10b981; /* Green */
+  --color-success-bg: #ecfdf5; /* Light green background */
+  --color-success-border: #a7f3d0; /* Light green border */
+  
+  /* Legacy colors - keeping for backward compatibility */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Backgrounds */
+  --color-background: #ffffff;
+  --color-background-translucent: rgba(255, 255, 255, 0.95);
+  --color-paper: #f3f4f6;
+  
+  /* Text */
+  --color-text: var(--color-gray-900);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-700);
+  --color-text-disabled: var(--color-gray-400);
+  
+  /* Other variables */
+  --border-radius: 0.5rem;
+  --font-family: system-ui, sans-serif;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,9 +71,38 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #1f2937;
+  color: var(--color-text-secondary);
   line-height: 1.5;
-  background-color: #f9fafb;
+  background-color: var(--color-background);
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(255, 107, 53, 0.25) 0%, transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(115, 171, 132, 0.2) 0%, transparent 35%),
+    radial-gradient(circle at 85% 85%, rgba(240, 192, 90, 0.22) 0%, transparent 40%),
+    radial-gradient(circle at 25% 80%, rgba(59, 44, 53, 0.15) 0%, transparent 35%);
+  background-attachment: fixed;
+  background-size: 200% 200%;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(240, 192, 90, 0.1)' fill-rule='evenodd'/%3E%3C/svg%3E"),
+    linear-gradient(0deg, transparent 95%, rgba(255, 107, 53, 0.08) 100%);
+  background-size: 30px 30px, 100% 2px;
+  opacity: 0.7;
+  z-index: 0;
+}
+
+.main-container, main, #root > div {
+  position: relative;
+  z-index: 1;
 }
 
 code {
@@ -59,4 +149,232 @@ label {
   color: #374151;
   display: block;
   margin-bottom: 6px;
+}
+
+/* Gradient Button Styles */
+@property --pos-x {
+  syntax: '<percentage>';
+  initial-value: 11.14%;
+  inherits: false;
+}
+
+@property --pos-y {
+  syntax: '<percentage>';
+  initial-value: 140%;
+  inherits: false;
+}
+
+@property --spread-x {
+  syntax: '<percentage>';
+  initial-value: 150%;
+  inherits: false;
+}
+
+@property --spread-y {
+  syntax: '<percentage>';
+  initial-value: 180.06%;
+  inherits: false;
+}
+
+@property --color-1 {
+  syntax: '<color>';
+  initial-value: #000;
+  inherits: false;
+}
+
+@property --color-2 {
+  syntax: '<color>';
+  initial-value: #08012c;
+  inherits: false;
+}
+
+@property --color-3 {
+  syntax: '<color>';
+  initial-value: #4e1e40;
+  inherits: false;
+}
+
+@property --color-4 {
+  syntax: '<color>';
+  initial-value: #70464e;
+  inherits: false;
+}
+
+@property --color-5 {
+  syntax: '<color>';
+  initial-value: #88394c;
+  inherits: false;
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 20deg;
+  inherits: true;
+}
+
+@property --border-color-1 {
+  syntax: '<color>';
+  initial-value: hsla(340, 75%, 60%, 0.2);
+  inherits: true;
+}
+
+@property --border-color-2 {
+  syntax: '<color>';
+  initial-value: hsla(340, 75%, 40%, 0.75);
+  inherits: true;
+}
+
+@property --stop-1 {
+  syntax: '<percentage>';
+  initial-value: 37.35%;
+  inherits: false;
+}
+
+@property --stop-2 {
+  syntax: '<percentage>';
+  initial-value: 61.36%;
+  inherits: false;
+}
+
+@property --stop-3 {
+  syntax: '<percentage>';
+  initial-value: 78.42%;
+  inherits: false;
+}
+
+@property --stop-4 {
+  syntax: '<percentage>';
+  initial-value: 89.52%;
+  inherits: false;
+}
+
+@property --stop-5 {
+  syntax: '<percentage>';
+  initial-value: 100%;
+  inherits: false;
+}
+
+.gradient-button {
+  position: relative;
+  appearance: none;
+  cursor: pointer;
+  background: radial-gradient(
+    var(--spread-x) var(--spread-y) at var(--pos-x) var(--pos-y),
+    var(--color-1) var(--stop-1),
+    var(--color-2) var(--stop-2),
+    var(--color-3) var(--stop-3),
+    var(--color-4) var(--stop-4),
+    var(--color-5) var(--stop-5)
+  );
+  transition:
+    --pos-x 0.5s,
+    --pos-y 0.5s,
+    --spread-x 0.5s,
+    --spread-y 0.5s,
+    --color-1 0.5s,
+    --color-2 0.5s,
+    --color-3 0.5s,
+    --color-4 0.5s,
+    --color-5 0.5s,
+    --border-angle 0.5s,
+    --border-color-1 0.5s,
+    --border-color-2 0.5s,
+    --stop-1 0.5s,
+    --stop-2 0.5s,
+    --stop-3 0.5s,
+    --stop-4 0.5s,
+    --stop-5 0.5s;
+    
+  /* Layout properties */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  padding: 0.9rem 2.25rem;
+  border-radius: 11px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: white;
+  text-decoration: none;
+  border: none;
+  outline: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.gradient-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    var(--border-angle),
+    var(--border-color-1),
+    var(--border-color-2)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gradient-button:hover {
+  --pos-x: 0%;
+  --pos-y: 91.51%;
+  --spread-x: 120.24%;
+  --spread-y: 103.18%;
+  --color-1: #ff9a87;
+  --color-2: #ffb56b;
+  --color-3: #ffcf4f;
+  --color-4: #ffd778;
+  --color-5: #ff8c42;
+  --border-angle: 190deg;
+  --border-color-1: hsla(30, 100%, 80%, 0.2);
+  --border-color-2: hsla(30, 100%, 70%, 0.7);
+  --stop-1: 0%;
+  --stop-2: 8.8%;
+  --stop-3: 21.44%;
+  --stop-4: 71.34%;
+  --stop-5: 85.76%;
+}
+
+.gradient-button:focus-visible {
+  outline: none;
+}
+
+.gradient-button:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.gradient-button-variant {
+  --color-1: #ff914d;
+  --color-2: #ffc074;
+  --color-3: #ffd278;
+  --color-4: #ffe9ad;
+  --border-angle: 200deg;
+  --border-color-1: hsla(30, 100%, 70%, 0.6);
+  --border-color-2: hsla(30, 100%, 80%, 0.4);
+}
+
+.gradient-button-variant:hover {
+  --pos-x: 0%;
+  --pos-y: 95.51%;
+  --spread-x: 110.24%;
+  --spread-y: 110.2%;
+  --color-1: #ffc074;
+  --color-2: #ffe9ad;
+  --color-3: #ffd278;
+  --color-4: #ff914d;
+  --color-5: #ffb56b;
+  --stop-1: 0%;
+  --stop-2: 10%;
+  --stop-3: 35.44%;
+  --stop-4: 71.34%;
+  --stop-5: 90.76%;
+  --border-angle: 210deg;
+  --border-color-1: hsla(30, 100%, 80%, 0.3);
+  --border-color-2: hsla(30, 100%, 70%, 0.8);
 }
