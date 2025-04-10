@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../common/Button';
 import { GradientButton } from '../ui/GradientButton';
+import ThemeToggle from '../common/ThemeToggle';
 
 const HeaderContainer = styled.header`
   background-color: var(--color-background-translucent);
@@ -248,6 +249,16 @@ const AuthButtonsContainer = styled.div`
   }
 `;
 
+const ThemeToggleContainer = styled.div`
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    margin: 1rem 0;
+  }
+`;
+
 const StyledButton = styled(Button)`
   width: 100%;
   
@@ -333,6 +344,10 @@ const Header = () => {
               Rezepte
             </NavLink>
           </NavLinkContainer>
+          
+          <ThemeToggleContainer>
+            <ThemeToggle />
+          </ThemeToggleContainer>
           
           {isAuthenticated ? (
             <UserContainer>

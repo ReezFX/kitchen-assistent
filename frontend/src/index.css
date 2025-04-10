@@ -19,6 +19,7 @@ html, body, #root {
   
   /* Semantic colors */
   --color-primary: var(--color-pumpkin);
+  --color-primary-rgb: 255, 130, 67;  /* RGB equivalent of pumpkin color */
   --color-primary-dark: hsla(23, 100%, 53%, 1); /* Darker orange */
   --color-primary-light: hsla(23, 100%, 73%, 1); /* Lighter orange */
   --color-secondary: var(--color-blue-gray);
@@ -53,6 +54,7 @@ html, body, #root {
   --color-background: #ffffff;
   --color-background-translucent: rgba(255, 255, 255, 0.95);
   --color-paper: #f3f4f6;
+  --color-paper-light: #ffffff;
   
   /* Text */
   --color-text: var(--color-gray-900);
@@ -60,9 +62,45 @@ html, body, #root {
   --color-text-secondary: var(--color-gray-700);
   --color-text-disabled: var(--color-gray-400);
   
+  /* Border colors */
+  --color-border: var(--color-gray-200);
+  
   /* Other variables */
   --border-radius: 0.5rem;
   --font-family: system-ui, sans-serif;
+}
+
+/* Dark Theme Variables */
+body[data-theme="dark"] {
+  /* Backgrounds */
+  --color-background: #121212;
+  --color-background-translucent: rgba(18, 18, 18, 0.95);
+  --color-paper: #1e1e1e;
+  --color-paper-light: #252525;
+  
+  /* Text colors */
+  --color-text: #f9fafb;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-disabled: #6b7280;
+  
+  /* Gray scale adjustments for dark mode */
+  --color-gray-50: #1e1e1e;
+  --color-gray-100: #2d2d2d;
+  --color-gray-200: #3d3d3d;
+  --color-gray-300: #4d4d4d;
+  --color-gray-400: #6b7280;
+  --color-gray-600: #d1d5db;
+  --color-gray-700: #e5e7eb;
+  --color-gray-800: #f3f4f6;
+  --color-gray-900: #f9fafb;
+  
+  /* Border colors */
+  --color-border: #3d3d3d;
+  
+  /* Success colors */
+  --color-success-bg: rgba(16, 185, 129, 0.2);
+  --color-success-border: rgba(16, 185, 129, 0.5);
 }
 
 * {
@@ -80,6 +118,11 @@ body {
   color: var(--color-text-secondary);
   line-height: 1.5;
   background-color: var(--color-background);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light theme background patterns */
+body[data-theme="light"] {
   background-image: 
     radial-gradient(circle at 10% 10%, rgba(255, 107, 53, 0.25) 0%, transparent 30%),
     radial-gradient(circle at 80% 20%, rgba(115, 171, 132, 0.2) 0%, transparent 35%),
@@ -90,7 +133,7 @@ body {
   position: relative;
 }
 
-body::before {
+body[data-theme="light"]::before {
   content: "";
   position: fixed;
   top: 0;
@@ -103,6 +146,34 @@ body::before {
     linear-gradient(0deg, transparent 95%, rgba(255, 107, 53, 0.08) 100%);
   background-size: 30px 30px, 100% 2px;
   opacity: 0.7;
+  z-index: 0;
+}
+
+/* Dark theme background patterns */
+body[data-theme="dark"] {
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(255, 107, 53, 0.15) 0%, transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(115, 171, 132, 0.1) 0%, transparent 35%),
+    radial-gradient(circle at 85% 85%, rgba(240, 192, 90, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 25% 80%, rgba(59, 44, 53, 0.08) 0%, transparent 35%);
+  background-attachment: fixed;
+  background-size: 200% 200%;
+  position: relative;
+}
+
+body[data-theme="dark"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(240, 192, 90, 0.05)' fill-rule='evenodd'/%3E%3C/svg%3E"),
+    linear-gradient(0deg, transparent 95%, rgba(255, 107, 53, 0.05) 100%);
+  background-size: 30px 30px, 100% 2px;
+  opacity: 0.4;
   z-index: 0;
 }
 
@@ -135,24 +206,30 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Adjust link color for dark theme */
+body[data-theme="dark"] a {
+  color: #ffffff;
+}
+
 button, select, input, textarea {
   font-family: inherit;
 }
 
 select {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-gray-300);
   border-radius: 8px;
   font-size: 14px;
   width: 100%;
-  background-color: white;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   margin-top: 6px;
 }
 
 label {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-primary);
   display: block;
   margin-bottom: 6px;
 }

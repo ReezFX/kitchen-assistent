@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-
 import Layout from './shared/components/layout/Layout';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import { AuthProvider } from './shared/context/AuthContext';
+import { ThemeProvider } from './shared/context/ThemeContext';
 
 // Pages
 import HomePage from './modules/home/HomePage';
@@ -16,29 +17,31 @@ import ExampleRecipeDetail from './shared/components/recipe/ExampleRecipeDetail'
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            {/* Public Routes - Accessible without login */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/example-recipe/:id" element={<ExampleRecipeDetailWrapper />} />
-            
-            {/* Protected Routes - Require authentication */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/recipes" element={<RecipesPage />} />
-              <Route path="/recipes/:id" element={<RecipeDetail />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Route>
-            
-            {/* 404 Route */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Layout>
+            <Routes>
+              {/* Public Routes - Accessible without login */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/example-recipe/:id" element={<ExampleRecipeDetailWrapper />} />
+              
+              {/* Protected Routes - Require authentication */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/recipes" element={<RecipesPage />} />
+                <Route path="/recipes/:id" element={<RecipeDetail />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
