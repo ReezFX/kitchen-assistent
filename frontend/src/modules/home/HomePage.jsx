@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, createGlobalStyle } from 'styled-components';
 import { Link } from 'react-router-dom';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import Button from '../../shared/components/common/Button';
 import Card from '../../shared/components/common/Card';
 import SavedRecipesList from '../../shared/components/recipe/SavedRecipesList';
@@ -10,6 +10,41 @@ import { GlowingEffect } from '../../shared/components/ui/GlowingEffect';
 import '../../shared/components/ui/glowing-effect.css';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useTheme } from '../../shared/context/ThemeContext';
+
+// Add global smooth scrolling
+const GlobalScrollStyle = createGlobalStyle`
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* For iOS Safari and other mobile browsers */
+  @supports (-webkit-overflow-scrolling: touch) {
+    body {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) transparent;
+  }
+  
+  /* For Chrome, Edge, and Safari */
+  *::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    border: 2px solid transparent;
+  }
+`;
 
 // Updated Gradient Text component with CSS variables
 const GradientText = styled.span`
@@ -83,7 +118,7 @@ const GradientTitle = styled(SectionTitle)`
 
 const SectionDescription = styled.p`
   font-size: 1.125rem;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
   color: var(--color-text);
   line-height: 1.6;
@@ -298,7 +333,7 @@ const USPCard = styled.div`
 const USPContent = styled.div`
   position: relative;
   z-index: 1;
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
 `;
 
@@ -312,7 +347,7 @@ const USPText = styled.p`
   font-size: 1.25rem;
   margin: 0 auto;
   opacity: 0.9;
-  max-width: 700px;
+  max-width: 100%;
 `;
 
 const RecipeCard = styled(Card)`
@@ -530,36 +565,87 @@ const testimonialCardViewVariants = {
   }
 };
 
-// --- Helper Component for InView Animation (with optional Parallax) ---
-const AnimatedSection = ({ children, variants, className, as = 'section', style, useParallax = false, parallaxAmount = -50 }) => {
+// Simplify the AnimatedSection implementation to avoid potential issues
+const AnimatedSection = ({ children, variants, className, as = 'section', style, useParallax = false, parallaxAmount = -50, staggerChildren = false, staggerDelay = 0.1 }) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 }); 
-  const MotionComponent = motion[as];
+  const isInView = useInView(ref, { 
+    once: true, 
+    amount: 0.15
+  }); 
+  
+  // Determine the component to render
+  const Component = motion[as] || motion.section;
 
-  // Parallax Logic - Hooks must be called unconditionally
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  // Simplified parallax with fewer transformations
+  const { scrollYProgress } = useScroll({ 
+    target: ref, 
+    offset: ["start end", "end start"] 
+  });
+  
+  // Always call useTransform unconditionally to follow React Hook rules
   const parallaxY = useTransform(scrollYProgress, [0, 1], [0, parallaxAmount]);
-
-  // Conditionally apply the parallax effect to the style
-  const finalY = useParallax ? parallaxY : undefined;
+  
+  // Then use its value conditionally
+  const yValue = useParallax ? parallaxY : 0;
 
   return (
-    <MotionComponent
+    <Component
       ref={ref}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={variants}
       className={className}
-      style={{ ...style, y: finalY }}
+      style={{ 
+        ...style, 
+        y: yValue
+      }}
     >
       {children}
-    </MotionComponent>
+    </Component>
+  );
+};
+
+// Define a reusable child animation variant for staggered animations
+const childAnimVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.5,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  }
+};
+
+// Simple component to wrap child elements for staggered animations
+const AnimatedItem = ({ children, className, style, delay = 0 }) => {
+  const variant = {
+    ...childAnimVariant,
+    visible: {
+      ...childAnimVariant.visible,
+      transition: {
+        ...childAnimVariant.visible.transition,
+        delay
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      variants={variant}
+      className={className}
+      style={style}
+    >
+      {children}
+    </motion.div>
   );
 };
 
 // --- Styled Components (Wrap relevant ones with AnimatedSection or motion) ---
 const MotionContainer = styled(motion.div)`
-  max-width: 1200px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   padding: 24px;
   background-color: var(--color-paper-light);
@@ -570,6 +656,8 @@ const MotionContainer = styled(motion.div)`
     : '0 8px 32px rgba(59, 44, 53, 0.1)'
   };
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  min-height: 100vh; /* Ensure container is tall enough */
+  position: relative; /* Ensure proper stacking context */
 `;
 
 // Define CSS Keyframes for the gradient animation
@@ -624,7 +712,10 @@ const MotionHeroContent = styled(motion.div)`
   z-index: 1;
 `;
 
-const MotionRecipesSection = styled(AnimatedSection).attrs({ useParallax: true, parallaxAmount: -60 })`
+const MotionRecipesSection = styled(AnimatedSection).attrs({ 
+  useParallax: true, 
+  parallaxAmount: -20
+})`
   margin-bottom: 60px;
   position: relative;
   padding: 40px;
@@ -634,14 +725,20 @@ const MotionRecipesSection = styled(AnimatedSection).attrs({ useParallax: true, 
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 `;
 
-const MotionUSPSection = styled(AnimatedSection).attrs({ useParallax: true, parallaxAmount: 30 })`
+const MotionUSPSection = styled(AnimatedSection).attrs({ 
+  useParallax: true, 
+  parallaxAmount: 10
+})`
   margin-top: -30px;
   margin-bottom: 60px;
   position: relative;
   z-index: 2;
 `;
 
-const MotionExampleRecipesSection = styled(AnimatedSection).attrs({ useParallax: true, parallaxAmount: -40 })`
+const MotionExampleRecipesSection = styled(AnimatedSection).attrs({ 
+  useParallax: true, 
+  parallaxAmount: -15
+})`
   margin-bottom: 60px;
 `;
 
@@ -649,11 +746,17 @@ const MotionStepSection = styled(AnimatedSection)`
   margin-bottom: 80px;
 `;
 
-const MotionFeatureSection = styled(AnimatedSection).attrs({ useParallax: true, parallaxAmount: -50 })`
+const MotionFeatureSection = styled(AnimatedSection).attrs({ 
+  useParallax: true, 
+  parallaxAmount: -20
+})`
   margin-bottom: 60px;
 `;
 
-const MotionTestimonialSection = styled(AnimatedSection).attrs({ useParallax: true, parallaxAmount: 20 })`
+const MotionTestimonialSection = styled(AnimatedSection).attrs({ 
+  useParallax: true, 
+  parallaxAmount: 10
+})`
   margin-bottom: 60px;
   padding: 40px;
   border-radius: 24px;
@@ -666,51 +769,87 @@ const MotionTestimonialSection = styled(AnimatedSection).attrs({ useParallax: tr
   };
 `;
 
-const MotionFeatureGrid = styled(AnimatedSection).attrs({ as: 'div' })`
+const MotionFeatureGrid = styled(AnimatedSection).attrs({ 
+  as: 'div', 
+  staggerChildren: true,
+  staggerDelay: 0.15
+})`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 30px;
-`;
-
-const MotionRecipeGrid = styled(AnimatedSection).attrs({ as: 'div' })`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-`;
-
-const MotionStepGrid = styled(AnimatedSection).attrs({ as: 'div' })`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 40px;
-  margin-top: 40px;
   
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 `;
 
-const MotionTestimonialGrid = styled(AnimatedSection).attrs({ as: 'div' })`
+const MotionRecipeGrid = styled(AnimatedSection).attrs({ 
+  as: 'div',
+  staggerChildren: true,
+  staggerDelay: 0.12
+})`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+`;
+
+const MotionStepGrid = styled(AnimatedSection).attrs({ 
+  as: 'div',
+  staggerChildren: true,
+  staggerDelay: 0.15
+})`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-top: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+`;
+
+const MotionTestimonialGrid = styled(AnimatedSection).attrs({ 
+  as: 'div',
+  staggerChildren: true,
+  staggerDelay: 0.18
+})`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
   margin-top: 40px;
 `;
 
-const MotionFeatureCardWrapper = styled(motion.div)`
+const MotionFeatureCardWrapper = styled(AnimatedItem)`
   position: relative;
   height: 100%;
   border-radius: 16px;
 `;
 
-const MotionRecipeCardWrapper = styled(motion.div)`
+const MotionRecipeCardWrapper = styled(AnimatedItem)`
   position: relative;
   height: 100%;
   border-radius: 16px;
 `;
 
-const MotionFeatureCard = styled(motion(FeatureCard))``;
-const MotionRecipeCard = styled(motion(RecipeCard))``;
+const MotionFeatureCard = styled(motion(FeatureCard))`
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-8px) scale(1.01);
+  }
+`;
+
+const MotionRecipeCard = styled(motion(RecipeCard))`
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease;
+`;
+
 const MotionStepCard = styled(motion.div)`
   position: relative;
   padding: 24px;
@@ -725,8 +864,18 @@ const MotionStepCard = styled(motion.div)`
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  transform-style: preserve-3d;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: ${props => props.theme === 'dark'
+      ? '0 15px 35px rgba(0, 0, 0, 0.25)'
+      : '0 15px 35px rgba(0, 0, 0, 0.08)'
+    };
+  }
 `;
+
 const MotionTestimonialCard = styled(motion.div)`
   background: ${props => props.theme === 'dark'
     ? 'rgba(40, 40, 40, 0.7)'
@@ -744,10 +893,27 @@ const MotionTestimonialCard = styled(motion.div)`
     ? 'var(--color-gray-300)'
     : 'var(--color-gray-200)'
   };
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  transform-style: preserve-3d;
+  
+  &:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: ${props => props.theme === 'dark'
+      ? '0 10px 30px rgba(0, 0, 0, 0.3)'
+      : '0 10px 30px rgba(0, 0, 0, 0.1)'
+    };
+  }
 `;
 
-const cardHoverEffect = { scale: 1.03, y: -5, transition: { duration: 0.2 } };
+// Update the card hover effect for smoother transitions
+const cardHoverEffect = { 
+  scale: 1.02, 
+  y: -8, 
+  transition: { 
+    duration: 0.3,
+    ease: [0.25, 0.1, 0.25, 1]
+  } 
+};
 
 // Add the slide animation components after the existing animations
 const slideIn = keyframes`
@@ -785,7 +951,7 @@ const SlideContainer = styled.div`
       : '0 10px 30px rgba(0, 0, 0, 0.15)'
   };
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  max-width: 1000px;
+  max-width: 100%;
   width: 100%;
   
   &:hover {
@@ -811,10 +977,10 @@ const Slide = styled.div`
   background-image: url(${props => props.image});
   background-size: cover;
   background-position: center;
-  animation: ${props => props.entering ? slideIn : (props.exiting ? slideOut : 'none')} 0.9s ease forwards;
-  animation-delay: ${props => props.exiting ? '0.1s' : '0s'};
-  opacity: ${props => props.active || props.exiting ? 1 : 0};
-  z-index: ${props => props.active ? 2 : (props.exiting ? 1 : 0)};
+  animation: ${props => props.$entering ? slideIn : (props.$exiting ? slideOut : 'none')} 0.9s ease forwards;
+  animation-delay: ${props => props.$exiting ? '0.1s' : '0s'};
+  opacity: ${props => props.$active || props.$exiting ? 1 : 0};
+  z-index: ${props => props.$active ? 2 : (props.$exiting ? 1 : 0)};
 `;
 
 const SlideshowRecipeTitle = styled.div`
@@ -854,11 +1020,11 @@ const ProgressBar = styled.div`
 const Progress = styled.div`
   height: 100%;
   background-color: var(--color-primary);
-  width: ${props => props.progress}%;
+  width: ${props => props.$progress}%;
   transition: width 0.1s linear;
 `;
 
-// Add the RecipeSlideshow component
+// Update the RecipeSlideshow component to integrate better with parallax effects
 const RecipeSlideshow = ({ theme }) => {
   const recipes = [
     { 
@@ -900,8 +1066,19 @@ const RecipeSlideshow = ({ theme }) => {
   const [prevSlide, setPrevSlide] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const slideshowRef = useRef(null);
   const intervalRef = useRef(null);
   const progressIntervalRef = useRef(null);
+  
+  // Add parallax effect to the slideshow
+  const { scrollYProgress } = useScroll({
+    target: slideshowRef,
+    offset: ["start end", "end start"]
+  });
+  
+  // Create subtle scale and opacity effects based on scroll
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 0.98]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.8, 1, 0.9]);
 
   const goToNextSlide = useCallback(() => {
     if (!isAnimating) {
@@ -966,454 +1143,571 @@ const RecipeSlideshow = ({ theme }) => {
   }, [goToNextSlide, progress, isAnimating]);
 
   return (
-    <SlideContainer theme={theme}>
-      <ProgressBar>
-        <Progress progress={progress} />
-      </ProgressBar>
-      
-      {recipes.map((recipe, index) => (
-        (index === currentSlide || index === prevSlide) && (
-          <Slide 
-            key={recipe.id}
-            image={recipe.image}
-            active={index === currentSlide}
-            entering={index === currentSlide && prevSlide !== null}
-            exiting={index === prevSlide}
-          />
-        )
-      ))}
-      
-      <SlideshowRecipeTitle>
-        {recipes[currentSlide].title}
-        <span>{recipes[currentSlide].description}</span>
-      </SlideshowRecipeTitle>
-    </SlideContainer>
+    <motion.div
+      ref={slideshowRef}
+      style={{
+        scale,
+        opacity,
+        willChange: 'transform, opacity',
+        transformStyle: 'preserve-3d'
+      }}
+    >
+      <SlideContainer theme={theme}>
+        <ProgressBar>
+          <Progress $progress={progress} />
+        </ProgressBar>
+        
+        <AnimatePresence>
+          {recipes.map((recipe, index) => (
+            (index === currentSlide || index === prevSlide) && (
+              <Slide 
+                key={recipe.id}
+                image={recipe.image}
+                $active={index === currentSlide}
+                $entering={index === currentSlide && prevSlide !== null}
+                $exiting={index === prevSlide}
+              />
+            )
+          ))}
+        </AnimatePresence>
+        
+        <SlideshowRecipeTitle>
+          {recipes[currentSlide].title}
+          <span>{recipes[currentSlide].description}</span>
+        </SlideshowRecipeTitle>
+      </SlideContainer>
+    </motion.div>
   );
 };
 
+// Create a simplified fallback component we can use if things fail
+const SimplePage = ({ children, theme }) => {
+  return (
+    <div style={{
+      maxWidth: '100%',
+      width: '100%',
+      margin: '0 auto',
+      padding: '24px',
+      backgroundColor: 'var(--color-paper-light)',
+      borderRadius: '16px',
+      boxShadow: theme === 'dark' 
+        ? '0 8px 32px rgba(0, 0, 0, 0.4)' 
+        : '0 8px 32px rgba(59, 44, 53, 0.1)',
+      minHeight: '100vh'
+    }}>
+      {children}
+    </div>
+  );
+};
+
+// Wrap the HomePage component with error handling
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const { theme } = useTheme();
+  const [hasError, setHasError] = useState(false);
 
   const heroSubtitleText = isAuthenticated 
     ? "Entdecke Rezepte basierend auf deinen Zutaten, erhalte Unterstützung beim Kochen und profitiere von intelligenten Funktionen für ein besseres Kocherlebnis."
     : "Verwandle Reste in köstliche Gerichte! Entdecke tausende KI-generierte Rezepte basierend auf deinen vorhandenen Zutaten und reduziere Lebensmittelabfälle.";
 
+  // Simple error boundary for the HomePage
+  useEffect(() => {
+    const handleError = (error) => {
+      console.error('HomePage error caught:', error);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  // If we have an error, render a simplified page
+  if (hasError) {
+    return (
+      <SimplePage theme={theme}>
+        <h1>Dein KI-gestützter Koch-Assistent</h1>
+        <p>{heroSubtitleText}</p>
+        {isAuthenticated ? (
+          <Button as={Link} to="/recipes" variant="primary">
+            Rezepte entdecken
+          </Button>
+        ) : (
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', margin: '32px 0' }}>
+            <Button as={Link} to="/register" variant="primary">
+              Kostenlos starten
+            </Button>
+            <Button as={Link} to="/login" variant="secondary">
+              Anmelden
+            </Button>
+          </div>
+        )}
+      </SimplePage>
+    );
+  }
+
+  // Regular rendering if no errors
   return (
-    <MotionContainer 
-      initial="hidden" 
-      animate="visible" 
-      variants={{ visible: { transition: { } } }}
-      theme={theme}
-    >
-      <HeroSectionStyled 
-        $isAuthenticated={isAuthenticated}
+    <>
+      <GlobalScrollStyle />
+      <MotionContainer 
+        initial="hidden" 
+        animate="visible" 
+        variants={{ visible: { transition: { } } }}
         theme={theme}
       >
-        <MotionHeroContent
-          initial="hidden"
-          animate="visible"
-          variants={heroContainerVariants}
+        <HeroSectionStyled 
+          $isAuthenticated={isAuthenticated}
+          theme={theme}
         >
-          <motion.div variants={itemFadeUp}>
-            <HeroTitle>
-              <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}>Dein&nbsp;</motion.span>
-              <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}><GradientText>KI-gestützter</GradientText>&nbsp;</motion.span>
-              <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}>Koch-Assistent</motion.span>
-            </HeroTitle>
-          </motion.div>
+          <MotionHeroContent
+            initial="hidden"
+            animate="visible"
+            variants={heroContainerVariants}
+          >
+            <motion.div variants={itemFadeUp}>
+              <HeroTitle>
+                <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}>Dein&nbsp;</motion.span>
+                <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}><GradientText>KI-gestützter</GradientText>&nbsp;</motion.span>
+                <motion.span style={{ display: 'inline-block' }} variants={heroTitleWordVariants}>Koch-Assistent</motion.span>
+              </HeroTitle>
+            </motion.div>
+            
+            <motion.div variants={heroSubtitleVariants}>
+              <HeroSubtitle>{heroSubtitleText}</HeroSubtitle>
+            </motion.div>
+            
+            {isAuthenticated ? (
+              <motion.div variants={heroButtonAppear}><ButtonWrapper>
+                <GradientButtonLink to="/recipes" $variant="primary">
+                  Rezepte entdecken
+                </GradientButtonLink>
+              </ButtonWrapper></motion.div>
+            ) : (
+              <motion.div variants={heroButtonAppear}><HeroButtons>
+                <GradientButtonLink to="/register" $variant="primary">
+                  Kostenlos starten
+                </GradientButtonLink>
+                <GradientButtonLink to="/login" $variant="variant">
+                  Anmelden
+                </GradientButtonLink>
+              </HeroButtons></motion.div>
+            )}
+            
+            {!isAuthenticated && (
+              <motion.div variants={heroStatsContainerVariants}>
+                <HeroStats>
+                  <motion.div variants={heroStatItemVariants}><StatItem>
+                    <StatNumber>5.000+</StatNumber>
+                    <StatLabel>Verfügbare Rezepte</StatLabel>
+                  </StatItem></motion.div>
+                  <motion.div variants={heroStatItemVariants}><StatItem>
+                    <StatNumber>2.500+</StatNumber>
+                    <StatLabel>Zufriedene Nutzer</StatLabel>
+                  </StatItem></motion.div>
+                  <motion.div variants={heroStatItemVariants}><StatItem>
+                    <StatNumber>98%</StatNumber>
+                    <StatLabel>Positive Bewertungen</StatLabel>
+                  </StatItem></motion.div>
+                </HeroStats>
+              </motion.div>
+            )}
+          </MotionHeroContent>
+        </HeroSectionStyled>
+
+        <AnimatedSection
+          variants={sectionViewVariants(0.2)}
+          className="container mx-auto py-12 px-4"
+        >
+          <SectionHeader>
+            <GradientTitle>Entdecke unsere beliebtesten Rezepte</GradientTitle>
+            <SectionDescription>
+              Lass dich von unseren köstlichen Gerichten inspirieren und entdecke neue Favoriten für deine Küche.
+            </SectionDescription>
+          </SectionHeader>
           
-          <motion.div variants={heroSubtitleVariants}>
-            <HeroSubtitle>{heroSubtitleText}</HeroSubtitle>
-          </motion.div>
-          
-          {isAuthenticated ? (
-            <motion.div variants={heroButtonAppear}><ButtonWrapper>
-              <GradientButtonLink to="/recipes" $variant="primary">
-                Rezepte entdecken
-              </GradientButtonLink>
-            </ButtonWrapper></motion.div>
-          ) : (
-            <motion.div variants={heroButtonAppear}><HeroButtons>
-              <GradientButtonLink to="/register" $variant="primary">
-                Kostenlos starten
-              </GradientButtonLink>
-              <GradientButtonLink to="/login" $variant="variant">
-                Anmelden
-              </GradientButtonLink>
-            </HeroButtons></motion.div>
-          )}
+          <RecipeSlideshow theme={theme} />
+        </AnimatedSection>
+
+        {isAuthenticated ? (
+          <MotionRecipesSection variants={sectionViewVariants()} theme={theme}>
+            <motion.div variants={itemFadeUp}><SectionHeader>
+              <SectionTitle>Deine <GradientText>gespeicherten</GradientText> Rezepte</SectionTitle>
+              <SectionDescription>
+                Schneller Zugriff auf deine Lieblingsrezepte und kürzlich erstellte Gerichte
+              </SectionDescription>
+            </SectionHeader></motion.div>
+            
+            <motion.div variants={itemFadeUp}><SavedRecipesList /></motion.div>
+          </MotionRecipesSection>
+        ) : null}
+        
+        {!isAuthenticated && (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'row', 
+            flexWrap: 'wrap', 
+            gap: '3rem',
+            margin: '0',
+            padding: '2rem 0'
+          }}>
+            <div style={{ 
+              flex: '1 1 48%', 
+              minWidth: '400px',
+              maxWidth: '100%',
+              margin: '0'
+            }}>
+              <MotionUSPSection variants={sectionViewVariants(0.1)} theme={theme}>
+                <USPCard theme={theme}>
+                  <USPContent>
+                    <motion.div variants={itemFadeUp}><USPTitle>Kein Lebensmittelverschwendung mehr!</USPTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><USPText>
+                      Aus Resten wird Genuss! Unser KI-Rezeptgenerator zaubert aus deinen übrigen Zutaten leckere Gerichte, statt sie wegzuwerfen. Egal was in deinem Kühlschrank übrig ist – die KI findet immer einen Weg, daraus etwas Schmackhaftes zu kreieren.
+                    </USPText></motion.div>
+                  </USPContent>
+                </USPCard>
+              </MotionUSPSection>
+            </div>
+            
+            <div style={{ 
+              flex: '1 1 48%', 
+              minWidth: '400px',
+              maxWidth: '100%',
+              margin: '0'
+            }}>
+              <MotionStepSection variants={sectionViewVariants(0.1)} theme={theme}>
+                <motion.div variants={itemFadeUp}><SectionHeader>
+                  <GradientTitle>In 3 einfachen Schritten zu deinem perfekten Rezept</GradientTitle>
+                  <SectionDescription>
+                    Unser Koch-Assistent macht es dir so einfach wie nie zuvor, passende Rezepte zu finden und zuzubereiten
+                  </SectionDescription>
+                </SectionHeader></motion.div>
+                
+                <MotionStepGrid variants={gridViewVariants(0.15)} theme={theme}>
+                  <MotionStepCard variants={stepCardViewVariants} theme={theme}>
+                    <motion.div variants={numberSlideUp}><StepNumber>1</StepNumber></motion.div>
+                    <motion.div variants={iconPopIn}><StepIcon>🥕</StepIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><StepTitle>Zutaten eingeben</StepTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><StepDescription>
+                      Teile uns mit, welche Zutaten du zu Hause hast oder was du verbrauchen möchtest
+                    </StepDescription></motion.div>
+                  </MotionStepCard>
+                  
+                  <MotionStepCard variants={stepCardViewVariants} theme={theme}>
+                    <motion.div variants={numberSlideUp}><StepNumber>2</StepNumber></motion.div>
+                    <motion.div variants={iconPopIn}><StepIcon>✨</StepIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><StepTitle>KI generiert Rezepte</StepTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><StepDescription>
+                      Unsere KI findet passende Rezepte basierend auf deinen Zutaten und Präferenzen
+                    </StepDescription></motion.div>
+                  </MotionStepCard>
+                  
+                  <MotionStepCard variants={stepCardViewVariants} theme={theme}>
+                    <motion.div variants={numberSlideUp}><StepNumber>3</StepNumber></motion.div>
+                    <motion.div variants={iconPopIn}><StepIcon>🍽️</StepIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><StepTitle>Kochen & Genießen</StepTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><StepDescription>
+                      Folge der Schritt-für-Schritt-Anleitung und genieße dein perfekt zubereitetes Gericht
+                    </StepDescription></motion.div>
+                  </MotionStepCard>
+                </MotionStepGrid>
+              </MotionStepSection>
+            </div>
+          </div>
+        )}
+        
+        {!isAuthenticated && (
+          <MotionExampleRecipesSection variants={sectionViewVariants()} theme={theme}>
+            <motion.div variants={itemFadeUp}><SectionHeader>
+              <GradientTitle>Beispielrezepte aus Resten</GradientTitle>
+              <SectionDescription>
+                Sieh dir an, was du mit übrigen Zutaten zaubern kannst
+              </SectionDescription>
+            </SectionHeader></motion.div>
+            
+            <MotionRecipeGrid variants={gridViewVariants()} theme={theme}>
+              <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
+                <GlowingEffect
+                  variant="carrot"
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={2}
+                />
+                <MotionRecipeCard theme={theme}>
+                  <motion.div variants={imageZoomIn}><ThumbnailContainer>
+                    <RecipeThumbnail>🥦</RecipeThumbnail>
+                  </ThumbnailContainer></motion.div>
+                  <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Gemüsereste-Frittata</RecipeTitle></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeInfo>
+                    <div>Schwierigkeit: Einfach</div>
+                    <div>Zubereitungszeit: 25 Min.</div>
+                  </RecipeInfo></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeDescription>
+                    Verwerte übrige Gemüsereste wie Brokkoli, Paprika und Kartoffeln in einer leckeren Frittata mit Eiern und Käse.
+                  </RecipeDescription></motion.div>
+                  <motion.div variants={itemFadeUp}><TagsContainer>
+                    <Tag>KI-generiert</Tag>
+                    <Tag>Vegetarisch</Tag>
+                    <Tag>Resteverwertung</Tag>
+                  </TagsContainer></motion.div>
+                  <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gemuesefrittata" variant="primary">
+                    Rezept ansehen
+                  </Button></motion.div>
+                </MotionRecipeCard>
+              </MotionRecipeCardWrapper>
+              
+              <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
+                <GlowingEffect
+                  variant="mint"
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={2}
+                />
+                <MotionRecipeCard theme={theme}>
+                  <motion.div variants={imageZoomIn}><ThumbnailContainer>
+                    <RecipeThumbnail>🍚</RecipeThumbnail>
+                  </ThumbnailContainer></motion.div>
+                  <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Gebratener Reis mit Resten</RecipeTitle></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeInfo>
+                    <div>Schwierigkeit: Einfach</div>
+                    <div>Zubereitungszeit: 20 Min.</div>
+                  </RecipeInfo></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeDescription>
+                    Aus übriggebliebenem Reis und kleinen Mengen Gemüse, Ei und Fleisch entsteht ein köstliches Gericht in nur einer Pfanne.
+                  </RecipeDescription></motion.div>
+                  <motion.div variants={itemFadeUp}><TagsContainer>
+                    <Tag>KI-generiert</Tag>
+                    <Tag>Schnell</Tag>
+                    <Tag>One-Pot</Tag>
+                  </TagsContainer></motion.div>
+                  <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gebratenerreis" variant="primary">
+                    Rezept ansehen
+                  </Button></motion.div>
+                </MotionRecipeCard>
+              </MotionRecipeCardWrapper>
+              
+              <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
+                <GlowingEffect
+                  variant="turmeric"
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={2}
+                />
+                <MotionRecipeCard theme={theme}>
+                  <motion.div variants={imageZoomIn}><ThumbnailContainer>
+                    <RecipeThumbnail>🍲</RecipeThumbnail>
+                  </ThumbnailContainer></motion.div>
+                  <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Suppe aus Gemüseenden</RecipeTitle></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeInfo>
+                    <div>Schwierigkeit: Mittel</div>
+                    <div>Zubereitungszeit: 45 Min.</div>
+                  </RecipeInfo></motion.div>
+                  <motion.div variants={itemFadeUp}><RecipeDescription>
+                    Statt wegzuwerfen: Aus Gemüseenden, -schalen und übrigen Kräutern wird eine nahrhafte und leckere Suppe.
+                  </RecipeDescription></motion.div>
+                  <motion.div variants={itemFadeUp}><TagsContainer>
+                    <Tag>KI-generiert</Tag>
+                    <Tag>Vegan</Tag>
+                    <Tag>Zero-Waste</Tag>
+                  </TagsContainer></motion.div>
+                  <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gemuesesuppe" variant="primary">
+                    Rezept ansehen
+                  </Button></motion.div>
+                </MotionRecipeCard>
+              </MotionRecipeCardWrapper>
+            </MotionRecipeGrid>
+          </MotionExampleRecipesSection>
+        )}
+        
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: '3.5rem',
+          margin: '0',
+          padding: '2rem 0 1rem'
+        }}>
+          <div style={{ 
+            flex: '1 1 65%', 
+            minWidth: '450px',
+            maxWidth: '100%',
+            margin: '0' 
+          }}>
+            <MotionFeatureSection variants={sectionViewVariants()} theme={theme}>
+              <motion.div variants={itemFadeUp}><SectionHeader>
+                <GradientTitle>Funktionen & Möglichkeiten</GradientTitle>
+                <SectionDescription>
+                  Entdecke alle Werkzeuge, die deine Kocherfahrung auf ein neues Level heben
+                </SectionDescription>
+              </SectionHeader></motion.div>
+              
+              <MotionFeatureGrid variants={gridViewVariants()} theme={theme}>
+                <MotionFeatureCardWrapper variants={childAnimVariant}>
+                  <GlowingEffect
+                    variant="carrot"
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={2}
+                  />
+                  <MotionFeatureCard theme={theme}>
+                    <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Rezepte">🍲</FeatureIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Personalisierte Rezepte</FeatureTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><FeatureDescription>
+                      Generiere Rezepte basierend auf den Zutaten, die du zu Hause hast, 
+                      und deinen persönlichen Präferenzen.
+                    </FeatureDescription></motion.div>
+                    <motion.div variants={buttonAppear}>{isAuthenticated ? (
+                      <Button as={Link} to="/recipes" variant="primary" style={{ marginTop: 'auto' }}>
+                        Rezept erstellen
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" style={{ marginTop: 'auto' }}>
+                        Mehr erfahren
+                      </Button>
+                    )}</motion.div>
+                  </MotionFeatureCard>
+                </MotionFeatureCardWrapper>
+                
+                <MotionFeatureCardWrapper variants={childAnimVariant}>
+                  <GlowingEffect
+                    variant="mint"
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={2}
+                  />
+                  <MotionFeatureCard theme={theme}>
+                    <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Übersetzung">🌍</FeatureIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Mehrsprachige Unterstützung</FeatureTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><FeatureDescription>
+                      Übersetze Rezepte und Anleitungen in deine bevorzugte Sprache für
+                      eine nahtlose Kocherfahrung.
+                    </FeatureDescription></motion.div>
+                    <motion.div variants={buttonAppear}>{isAuthenticated ? (
+                      <Button as={Link} to="/profile" variant="primary" style={{ marginTop: 'auto' }}>
+                        Profil anpassen
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" style={{ marginTop: 'auto' }}>
+                        Mehr erfahren
+                      </Button>
+                    )}</motion.div>
+                  </MotionFeatureCard>
+                </MotionFeatureCardWrapper>
+                
+                <MotionFeatureCardWrapper variants={childAnimVariant}>
+                  <GlowingEffect
+                    variant="turmeric"
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={2}
+                  />
+                  <MotionFeatureCard theme={theme}>
+                    <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Einkaufsliste">🛒</FeatureIcon></motion.div>
+                    <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Automatische Einkaufsliste</FeatureTitle></motion.div>
+                    <motion.div variants={itemFadeUp}><FeatureDescription>
+                      Erstelle automatisch Einkaufslisten aus deinen ausgewählten Rezepten
+                      und speichere sie für deinen nächsten Einkauf.
+                    </FeatureDescription></motion.div>
+                    <motion.div variants={buttonAppear}>{isAuthenticated ? (
+                      <Button as={Link} to="/shopping" variant="primary" style={{ marginTop: 'auto' }}>
+                        Zur Einkaufsliste
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" style={{ marginTop: 'auto' }}>
+                        Mehr erfahren
+                      </Button>
+                    )}</motion.div>
+                  </MotionFeatureCard>
+                </MotionFeatureCardWrapper>
+              </MotionFeatureGrid>
+            </MotionFeatureSection>
+          </div>
           
           {!isAuthenticated && (
-            <motion.div variants={heroStatsContainerVariants}>
-              <HeroStats>
-                <motion.div variants={heroStatItemVariants}><StatItem>
-                  <StatNumber>5.000+</StatNumber>
-                  <StatLabel>Verfügbare Rezepte</StatLabel>
-                </StatItem></motion.div>
-                <motion.div variants={heroStatItemVariants}><StatItem>
-                  <StatNumber>2.500+</StatNumber>
-                  <StatLabel>Zufriedene Nutzer</StatLabel>
-                </StatItem></motion.div>
-                <motion.div variants={heroStatItemVariants}><StatItem>
-                  <StatNumber>98%</StatNumber>
-                  <StatLabel>Positive Bewertungen</StatLabel>
-                </StatItem></motion.div>
-              </HeroStats>
-            </motion.div>
+            <div style={{ 
+              flex: '1 1 30%', 
+              minWidth: '350px',
+              maxWidth: '100%',
+              margin: '0'
+            }}>
+              <MotionTestimonialSection variants={sectionViewVariants(0.1)} theme={theme}>
+                <motion.div variants={itemFadeUp}><SectionHeader>
+                  <GradientTitle>Was unsere Nutzer sagen</GradientTitle>
+                  <SectionDescription>
+                    Erfahre, wie Koch-Assistent das kulinarische Leben unserer Nutzer verändert hat
+                  </SectionDescription>
+                </SectionHeader></motion.div>
+                
+                <MotionTestimonialGrid variants={gridViewVariants(0.1, 0.2)} theme={theme} style={{ flexDirection: 'column' }}>
+                  <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
+                    <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialText>
+                      "Seit ich den Koch-Assistenten nutze, werfe ich kaum noch Lebensmittel weg. 
+                      Die App schlägt mir immer passende Rezepte vor, wenn ich Zutaten verbrauchen muss."
+                    </TestimonialText></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialAuthor>
+                      <AuthorAvatar>👩</AuthorAvatar>
+                      <AuthorInfo>
+                        <AuthorName>Sarah M.</AuthorName>
+                        <AuthorTitle>Nutzerin seit 6 Monaten</AuthorTitle>
+                      </AuthorInfo>
+                    </TestimonialAuthor></motion.div>
+                  </MotionTestimonialCard>
+                  
+                  <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
+                    <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialText>
+                      "Die KI-Vorschläge sind erstaunlich kreativ! Ich habe schon so viele neue Gerichte 
+                      entdeckt, die ich jetzt regelmäßig koche. Absolute Empfehlung für jeden Hobbykoch."
+                    </TestimonialText></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialAuthor>
+                      <AuthorAvatar>👨</AuthorAvatar>
+                      <AuthorInfo>
+                        <AuthorName>Thomas K.</AuthorName>
+                        <AuthorTitle>Hobbykoch & Food-Blogger</AuthorTitle>
+                      </AuthorInfo>
+                    </TestimonialAuthor></motion.div>
+                  </MotionTestimonialCard>
+                  
+                  <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
+                    <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialText>
+                      "Als berufstätige Mutter spare ich so viel Zeit bei der Mahlzeitenplanung. 
+                      Die Einkaufslisten-Funktion ist genial und der Koch-Assistent hilft mir, wenn 
+                      ich mal nicht weiter weiß."
+                    </TestimonialText></motion.div>
+                    <motion.div variants={itemFadeUp}><TestimonialAuthor>
+                      <AuthorAvatar>👩</AuthorAvatar>
+                      <AuthorInfo>
+                        <AuthorName>Lisa T.</AuthorName>
+                        <AuthorTitle>Familienmutter & Vielbeschäftigte</AuthorTitle>
+                      </AuthorInfo>
+                    </TestimonialAuthor></motion.div>
+                  </MotionTestimonialCard>
+                </MotionTestimonialGrid>
+              </MotionTestimonialSection>
+            </div>
           )}
-        </MotionHeroContent>
-      </HeroSectionStyled>
-
-      {isAuthenticated ? (
-        <MotionRecipesSection variants={sectionViewVariants()} theme={theme}>
-          <motion.div variants={itemFadeUp}><SectionHeader>
-            <SectionTitle>Deine <GradientText>gespeicherten</GradientText> Rezepte</SectionTitle>
-            <SectionDescription>
-              Schneller Zugriff auf deine Lieblingsrezepte und kürzlich erstellte Gerichte
-            </SectionDescription>
-          </SectionHeader></motion.div>
-          
-          <motion.div variants={itemFadeUp}><SavedRecipesList /></motion.div>
-        </MotionRecipesSection>
-      ) : null}
-      
-      {!isAuthenticated && (
-        <MotionUSPSection variants={sectionViewVariants(0.1)} theme={theme}>
-          <USPCard theme={theme}>
-            <USPContent>
-              <motion.div variants={itemFadeUp}><USPTitle>Kein Lebensmittelverschwendung mehr!</USPTitle></motion.div>
-              <motion.div variants={itemFadeUp}><USPText>
-                Aus Resten wird Genuss! Unser KI-Rezeptgenerator zaubert aus deinen übrigen Zutaten leckere Gerichte, statt sie wegzuwerfen. Egal was in deinem Kühlschrank übrig ist – die KI findet immer einen Weg, daraus etwas Schmackhaftes zu kreieren.
-              </USPText></motion.div>
-            </USPContent>
-          </USPCard>
-        </MotionUSPSection>
-      )}
-      
-      {!isAuthenticated && (
-        <MotionExampleRecipesSection variants={sectionViewVariants()} theme={theme}>
-          <motion.div variants={itemFadeUp}><SectionHeader>
-            <GradientTitle>Beispielrezepte aus Resten</GradientTitle>
-            <SectionDescription>
-              Sieh dir an, was du mit übrigen Zutaten zaubern kannst
-            </SectionDescription>
-          </SectionHeader></motion.div>
-          
-          <MotionRecipeGrid variants={gridViewVariants()} theme={theme}>
-            <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
-              <GlowingEffect
-                variant="carrot"
-                spread={40}
-                glow={true}
-                disabled={false}
-                proximity={64}
-                inactiveZone={0.01}
-                borderWidth={2}
-              />
-              <MotionRecipeCard theme={theme}>
-                <motion.div variants={imageZoomIn}><ThumbnailContainer>
-                  <RecipeThumbnail>🥦</RecipeThumbnail>
-                </ThumbnailContainer></motion.div>
-                <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Gemüsereste-Frittata</RecipeTitle></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeInfo>
-                  <div>Schwierigkeit: Einfach</div>
-                  <div>Zubereitungszeit: 25 Min.</div>
-                </RecipeInfo></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeDescription>
-                  Verwerte übrige Gemüsereste wie Brokkoli, Paprika und Kartoffeln in einer leckeren Frittata mit Eiern und Käse.
-                </RecipeDescription></motion.div>
-                <motion.div variants={itemFadeUp}><TagsContainer>
-                  <Tag>KI-generiert</Tag>
-                  <Tag>Vegetarisch</Tag>
-                  <Tag>Resteverwertung</Tag>
-                </TagsContainer></motion.div>
-                <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gemuesefrittata" variant="primary">
-                  Rezept ansehen
-                </Button></motion.div>
-              </MotionRecipeCard>
-            </MotionRecipeCardWrapper>
-            
-            <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
-              <GlowingEffect
-                variant="mint"
-                spread={40}
-                glow={true}
-                disabled={false}
-                proximity={64}
-                inactiveZone={0.01}
-                borderWidth={2}
-              />
-              <MotionRecipeCard theme={theme}>
-                <motion.div variants={imageZoomIn}><ThumbnailContainer>
-                  <RecipeThumbnail>🍚</RecipeThumbnail>
-                </ThumbnailContainer></motion.div>
-                <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Gebratener Reis mit Resten</RecipeTitle></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeInfo>
-                  <div>Schwierigkeit: Einfach</div>
-                  <div>Zubereitungszeit: 20 Min.</div>
-                </RecipeInfo></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeDescription>
-                  Aus übriggebliebenem Reis und kleinen Mengen Gemüse, Ei und Fleisch entsteht ein köstliches Gericht in nur einer Pfanne.
-                </RecipeDescription></motion.div>
-                <motion.div variants={itemFadeUp}><TagsContainer>
-                  <Tag>KI-generiert</Tag>
-                  <Tag>Schnell</Tag>
-                  <Tag>One-Pot</Tag>
-                </TagsContainer></motion.div>
-                <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gebratenerreis" variant="primary">
-                  Rezept ansehen
-                </Button></motion.div>
-              </MotionRecipeCard>
-            </MotionRecipeCardWrapper>
-            
-            <MotionRecipeCardWrapper variants={cardViewVariants} whileHover={cardHoverEffect}>
-              <GlowingEffect
-                variant="turmeric"
-                spread={40}
-                glow={true}
-                disabled={false}
-                proximity={64}
-                inactiveZone={0.01}
-                borderWidth={2}
-              />
-              <MotionRecipeCard theme={theme}>
-                <motion.div variants={imageZoomIn}><ThumbnailContainer>
-                  <RecipeThumbnail>🍲</RecipeThumbnail>
-                </ThumbnailContainer></motion.div>
-                <motion.div variants={textSlideIn(0.1)}><RecipeTitle>Suppe aus Gemüseenden</RecipeTitle></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeInfo>
-                  <div>Schwierigkeit: Mittel</div>
-                  <div>Zubereitungszeit: 45 Min.</div>
-                </RecipeInfo></motion.div>
-                <motion.div variants={itemFadeUp}><RecipeDescription>
-                  Statt wegzuwerfen: Aus Gemüseenden, -schalen und übrigen Kräutern wird eine nahrhafte und leckere Suppe.
-                </RecipeDescription></motion.div>
-                <motion.div variants={itemFadeUp}><TagsContainer>
-                  <Tag>KI-generiert</Tag>
-                  <Tag>Vegan</Tag>
-                  <Tag>Zero-Waste</Tag>
-                </TagsContainer></motion.div>
-                <motion.div variants={buttonAppear}><Button as={Link} to="/example-recipe/gemuesesuppe" variant="primary">
-                  Rezept ansehen
-                </Button></motion.div>
-              </MotionRecipeCard>
-            </MotionRecipeCardWrapper>
-          </MotionRecipeGrid>
-        </MotionExampleRecipesSection>
-      )}
-      
-      {!isAuthenticated && (
-        <MotionStepSection variants={sectionViewVariants(0.1)} theme={theme}>
-          <motion.div variants={itemFadeUp}><SectionHeader>
-            <GradientTitle>In 3 einfachen Schritten zu deinem perfekten Rezept</GradientTitle>
-            <SectionDescription>
-              Unser Koch-Assistent macht es dir so einfach wie nie zuvor, passende Rezepte zu finden und zuzubereiten
-            </SectionDescription>
-          </SectionHeader></motion.div>
-          
-          <MotionStepGrid variants={gridViewVariants(0.15)} theme={theme}>
-            <MotionStepCard variants={stepCardViewVariants} theme={theme}>
-              <motion.div variants={numberSlideUp}><StepNumber>1</StepNumber></motion.div>
-              <motion.div variants={iconPopIn}><StepIcon>🥕</StepIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><StepTitle>Zutaten eingeben</StepTitle></motion.div>
-              <motion.div variants={itemFadeUp}><StepDescription>
-                Teile uns mit, welche Zutaten du zu Hause hast oder was du verbrauchen möchtest
-              </StepDescription></motion.div>
-            </MotionStepCard>
-            
-            <MotionStepCard variants={stepCardViewVariants} theme={theme}>
-              <motion.div variants={numberSlideUp}><StepNumber>2</StepNumber></motion.div>
-              <motion.div variants={iconPopIn}><StepIcon>✨</StepIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><StepTitle>KI generiert Rezepte</StepTitle></motion.div>
-              <motion.div variants={itemFadeUp}><StepDescription>
-                Unsere KI findet passende Rezepte basierend auf deinen Zutaten und Präferenzen
-              </StepDescription></motion.div>
-            </MotionStepCard>
-            
-            <MotionStepCard variants={stepCardViewVariants} theme={theme}>
-              <motion.div variants={numberSlideUp}><StepNumber>3</StepNumber></motion.div>
-              <motion.div variants={iconPopIn}><StepIcon>🍽️</StepIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><StepTitle>Kochen & Genießen</StepTitle></motion.div>
-              <motion.div variants={itemFadeUp}><StepDescription>
-                Folge der Schritt-für-Schritt-Anleitung und genieße dein perfekt zubereitetes Gericht
-              </StepDescription></motion.div>
-            </MotionStepCard>
-          </MotionStepGrid>
-        </MotionStepSection>
-      )}
-      
-      <MotionFeatureSection variants={sectionViewVariants()} theme={theme}>
-        <motion.div variants={itemFadeUp}><SectionHeader>
-          <GradientTitle>Funktionen & Möglichkeiten</GradientTitle>
-          <SectionDescription>
-            Entdecke alle Werkzeuge, die deine Kocherfahrung auf ein neues Level heben
-          </SectionDescription>
-        </SectionHeader></motion.div>
-        
-        <MotionFeatureGrid variants={gridViewVariants()} theme={theme}>
-          <MotionFeatureCardWrapper variants={cardViewVariants}>
-            <GlowingEffect
-              variant="carrot"
-              spread={40}
-              glow={true}
-              disabled={false}
-              proximity={64}
-              inactiveZone={0.01}
-              borderWidth={2}
-            />
-            <MotionFeatureCard theme={theme}>
-              <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Rezepte">🍲</FeatureIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Personalisierte Rezepte</FeatureTitle></motion.div>
-              <motion.div variants={itemFadeUp}><FeatureDescription>
-                Generiere Rezepte basierend auf den Zutaten, die du zu Hause hast, 
-                und deinen persönlichen Präferenzen.
-              </FeatureDescription></motion.div>
-              <motion.div variants={buttonAppear}>{isAuthenticated ? (
-                <Button as={Link} to="/recipes" variant="primary" style={{ marginTop: 'auto' }}>
-                  Rezept erstellen
-                </Button>
-              ) : (
-                <Button variant="secondary" style={{ marginTop: 'auto' }}>
-                  Mehr erfahren
-                </Button>
-              )}</motion.div>
-            </MotionFeatureCard>
-          </MotionFeatureCardWrapper>
-          
-          <MotionFeatureCardWrapper variants={cardViewVariants}>
-            <GlowingEffect
-              variant="mint"
-              spread={40}
-              glow={true}
-              disabled={false}
-              proximity={64}
-              inactiveZone={0.01}
-              borderWidth={2}
-            />
-            <MotionFeatureCard theme={theme}>
-              <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Übersetzung">🌍</FeatureIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Mehrsprachige Unterstützung</FeatureTitle></motion.div>
-              <motion.div variants={itemFadeUp}><FeatureDescription>
-                Übersetze Rezepte und Anleitungen in deine bevorzugte Sprache für
-                eine nahtlose Kocherfahrung.
-              </FeatureDescription></motion.div>
-              <motion.div variants={buttonAppear}>{isAuthenticated ? (
-                <Button as={Link} to="/profile" variant="primary" style={{ marginTop: 'auto' }}>
-                  Profil anpassen
-                </Button>
-              ) : (
-                <Button variant="secondary" style={{ marginTop: 'auto' }}>
-                  Mehr erfahren
-                </Button>
-              )}</motion.div>
-            </MotionFeatureCard>
-          </MotionFeatureCardWrapper>
-          
-          <MotionFeatureCardWrapper variants={cardViewVariants}>
-            <GlowingEffect
-              variant="turmeric"
-              spread={40}
-              glow={true}
-              disabled={false}
-              proximity={64}
-              inactiveZone={0.01}
-              borderWidth={2}
-            />
-            <MotionFeatureCard theme={theme}>
-              <motion.div variants={iconPopIn}><FeatureIcon role="img" aria-label="Einkaufsliste">🛒</FeatureIcon></motion.div>
-              <motion.div variants={textSlideIn(0.1)}><FeatureTitle>Automatische Einkaufsliste</FeatureTitle></motion.div>
-              <motion.div variants={itemFadeUp}><FeatureDescription>
-                Erstelle automatisch Einkaufslisten aus deinen ausgewählten Rezepten
-                und speichere sie für deinen nächsten Einkauf.
-              </FeatureDescription></motion.div>
-              <motion.div variants={buttonAppear}>{isAuthenticated ? (
-                <Button as={Link} to="/shopping" variant="primary" style={{ marginTop: 'auto' }}>
-                  Zur Einkaufsliste
-                </Button>
-              ) : (
-                <Button variant="secondary" style={{ marginTop: 'auto' }}>
-                  Mehr erfahren
-                </Button>
-              )}</motion.div>
-            </MotionFeatureCard>
-          </MotionFeatureCardWrapper>
-        </MotionFeatureGrid>
-      </MotionFeatureSection>
-      
-      {!isAuthenticated && (
-        <MotionTestimonialSection variants={sectionViewVariants(0.1)} theme={theme}>
-          <motion.div variants={itemFadeUp}><SectionHeader>
-            <GradientTitle>Was unsere Nutzer sagen</GradientTitle>
-            <SectionDescription>
-              Erfahre, wie Koch-Assistent das kulinarische Leben unserer Nutzer verändert hat
-            </SectionDescription>
-          </SectionHeader></motion.div>
-          
-          <MotionTestimonialGrid variants={gridViewVariants(0.1, 0.2)} theme={theme}>
-            <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
-              <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialText>
-                "Seit ich den Koch-Assistenten nutze, werfe ich kaum noch Lebensmittel weg. 
-                Die App schlägt mir immer passende Rezepte vor, wenn ich Zutaten verbrauchen muss."
-              </TestimonialText></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialAuthor>
-                <AuthorAvatar>👩</AuthorAvatar>
-                <AuthorInfo>
-                  <AuthorName>Sarah M.</AuthorName>
-                  <AuthorTitle>Nutzerin seit 6 Monaten</AuthorTitle>
-                </AuthorInfo>
-              </TestimonialAuthor></motion.div>
-            </MotionTestimonialCard>
-            
-            <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
-              <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialText>
-                "Die KI-Vorschläge sind erstaunlich kreativ! Ich habe schon so viele neue Gerichte 
-                entdeckt, die ich jetzt regelmäßig koche. Absolute Empfehlung für jeden Hobbykoch."
-              </TestimonialText></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialAuthor>
-                <AuthorAvatar>👨</AuthorAvatar>
-                <AuthorInfo>
-                  <AuthorName>Thomas K.</AuthorName>
-                  <AuthorTitle>Hobbykoch & Food-Blogger</AuthorTitle>
-                </AuthorInfo>
-              </TestimonialAuthor></motion.div>
-            </MotionTestimonialCard>
-            
-            <MotionTestimonialCard variants={testimonialCardViewVariants} theme={theme}>
-              <motion.div variants={iconPopIn}><QuoteIcon>❝</QuoteIcon></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialText>
-                "Als berufstätige Mutter spare ich so viel Zeit bei der Mahlzeitenplanung. 
-                Die Einkaufslisten-Funktion ist genial und der Koch-Assistent hilft mir, wenn 
-                ich mal nicht weiter weiß."
-              </TestimonialText></motion.div>
-              <motion.div variants={itemFadeUp}><TestimonialAuthor>
-                <AuthorAvatar>👩‍👧</AuthorAvatar>
-                <AuthorInfo>
-                  <AuthorName>Lisa T.</AuthorName>
-                  <AuthorTitle>Familienmutter & Vielbeschäftigte</AuthorTitle>
-                </AuthorInfo>
-              </TestimonialAuthor></motion.div>
-            </MotionTestimonialCard>
-          </MotionTestimonialGrid>
-        </MotionTestimonialSection>
-      )}
-
-      <AnimatedSection
-        variants={sectionViewVariants(0.2)}
-        className="container mx-auto py-12 px-4"
-      >
-        <SectionHeader>
-          <GradientTitle>Entdecke unsere beliebtesten Rezepte</GradientTitle>
-          <SectionDescription>
-            Lass dich von unseren köstlichen Gerichten inspirieren und entdecke neue Favoriten für deine Küche.
-          </SectionDescription>
-        </SectionHeader>
-        
-        <RecipeSlideshow theme={theme} />
-      </AnimatedSection>
-    </MotionContainer>
+        </div>
+      </MotionContainer>
+    </>
   );
 };
 
