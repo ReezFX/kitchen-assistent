@@ -11,31 +11,116 @@ const Container = styled.div`
   overflow-x: hidden;
   width: 100%;
   position: relative;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--transition), color var(--transition);
 `;
 
-const Main = styled.main`
+const MainContent = styled.div`
   flex: 1;
-  padding: 24px;
-  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  margin: 0 auto;
-  color: var(--color-text-secondary);
+  position: relative;
+  padding-bottom: var(--space-8);
   
+  /* Add padding to account for the sticky header on small screens */
   @media (max-width: 768px) {
-    padding: 16px 12px;
+    padding-top: var(--space-2);
+    /* Add padding to bottom to account for the bottom navigation bar */
+    padding-bottom: calc(var(--space-20) + var(--space-4));
   }
 `;
 
-const Layout = ({ children }) => {
+const ContentWrapper = styled.div`
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+  
+  @media (max-width: 768px) {
+    padding: var(--space-4) var(--space-3);
+  }
+  
+  @media (max-width: 480px) {
+    padding: var(--space-3) var(--space-2);
+  }
+`;
+
+const Footer = styled.footer`
+  margin-top: auto;
+  padding: var(--space-6) var(--space-4);
+  background-color: var(--color-paper);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  display: ${props => props.$hideFooter ? 'none' : 'block'};
+  
+  @media (max-width: 768px) {
+    padding: var(--space-4) var(--space-3);
+  }
+`;
+
+const FooterContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+`;
+
+const FooterLinks = styled.div`
+  display: flex;
+  gap: var(--space-4);
+  
+  @media (max-width: 640px) {
+    gap: var(--space-3);
+  }
+`;
+
+const FooterLink = styled.a`
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color var(--transition-fast);
+  
+  &:hover {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+`;
+
+const Layout = ({ children, hideFooter = false }) => {
   const { theme } = useTheme();
+  const currentYear = new Date().getFullYear();
   
   return (
     <Container data-theme={theme}>
       <Header />
-      <Main>{children}</Main>
+      <MainContent>
+        <ContentWrapper>
+          {children}
+        </ContentWrapper>
+        
+        <Footer $hideFooter={hideFooter}>
+          <FooterContent>
+            <div>© {currentYear} Koch-Assistent</div>
+            <FooterLinks>
+              <FooterLink href="/about">Über uns</FooterLink>
+              <FooterLink href="/privacy">Datenschutz</FooterLink>
+              <FooterLink href="/terms">Nutzungsbedingungen</FooterLink>
+            </FooterLinks>
+          </FooterContent>
+        </Footer>
+      </MainContent>
     </Container>
   );
 };
 
-export default Layout; 
+export default Layout;

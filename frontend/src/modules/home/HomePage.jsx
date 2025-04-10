@@ -15,12 +15,21 @@ import { useTheme } from '../../shared/context/ThemeContext';
 const GlobalScrollStyle = createGlobalStyle`
   html {
     scroll-behavior: smooth;
+    touch-action: manipulation; /* Improve touch responsiveness */
   }
   
   /* For iOS Safari and other mobile browsers */
   @supports (-webkit-overflow-scrolling: touch) {
     body {
       -webkit-overflow-scrolling: touch;
+      /* Prevent rubber-band scrolling on iOS */
+      overscroll-behavior-y: none;
+    }
+    
+    /* Fix for iOS 100vh issue */
+    .vh-fix {
+      height: 100vh;
+      height: -webkit-fill-available;
     }
   }
   
@@ -43,6 +52,16 @@ const GlobalScrollStyle = createGlobalStyle`
     background-color: var(--color-primary);
     border-radius: 10px;
     border: 2px solid transparent;
+  }
+  
+  /* Optimize animation performance on mobile */
+  @media (max-width: 768px) {
+    .will-change-opacity {
+      will-change: opacity;
+    }
+    .will-change-transform {
+      will-change: transform;
+    }
   }
 `;
 
@@ -80,12 +99,19 @@ const ButtonWrapper = styled.div`
   @media (max-width: 640px) {
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
   }
 `;
 
 const StyledLink = styled(Link)`
   display: block;
   text-decoration: none;
+  
+  @media (max-width: 640px) {
+    width: 100%;
+  }
   
   &:hover, &:focus {
     text-decoration: none;
@@ -101,6 +127,14 @@ const GradientButtonLink = ({ to, children, $variant }) => (
 const SectionHeader = styled.div`
   text-align: center;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 24px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -108,6 +142,10 @@ const SectionTitle = styled.h2`
   font-weight: 700;
   margin-bottom: 12px;
   color: var(--color-dark);
+  
+  @media (max-width: 480px) {
+    margin-bottom: 8px;
+  }
 `;
 
 const GradientTitle = styled(SectionTitle)`
@@ -122,6 +160,11 @@ const SectionDescription = styled.p`
   margin: 0 auto;
   color: var(--color-text);
   line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    max-width: 95%;
+  }
 `;
 
 const FeatureCard = styled(Card)`
@@ -146,6 +189,14 @@ const FeatureCard = styled(Card)`
       ? '0 20px 40px rgba(0, 0, 0, 0.3), 0 1px 5px rgba(0, 0, 0, 0.1)'
       : '0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 5px rgba(0, 0, 0, 0.03)'
     };
+  }
+  
+  @media (max-width: 768px) {
+    padding: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 20px;
   }
 `;
 
@@ -177,10 +228,14 @@ const HeroButtons = styled.div`
   justify-content: center;
   gap: 16px;
   margin-top: 40px;
+  width: 100%;
   
   @media (max-width: 640px) {
     flex-direction: column;
     align-items: center;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
   }
 `;
 
@@ -196,6 +251,7 @@ const HeroStats = styled.div`
   
   @media (max-width: 640px) {
     flex-wrap: wrap;
+    gap: 16px;
   }
 `;
 
@@ -203,6 +259,11 @@ const StatItem = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  
+  @media (max-width: 640px) {
+    min-width: 100px;
+    margin-bottom: 16px;
+  }
 `;
 
 const StatNumber = styled.div`
@@ -212,6 +273,10 @@ const StatNumber = styled.div`
   background: linear-gradient(135deg, var(--color-maize) 0%, white 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  
+  @media (max-width: 640px) {
+    font-size: 2rem;
+  }
 `;
 
 const StatLabel = styled.div`
@@ -573,6 +638,9 @@ const AnimatedSection = ({ children, variants, className, as = 'section', style,
     amount: 0.15
   }); 
   
+  // Handle mobile vs desktop differently
+  const isMobile = useRef(window.innerWidth <= 768).current;
+  
   // Determine the component to render
   const Component = motion[as] || motion.section;
 
@@ -582,8 +650,15 @@ const AnimatedSection = ({ children, variants, className, as = 'section', style,
     offset: ["start end", "end start"] 
   });
   
+  // Reduce parallax effect on mobile for better performance
+  const mobileParallaxAmount = parallaxAmount * 0.5;
+  
   // Always call useTransform unconditionally to follow React Hook rules
-  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, parallaxAmount]);
+  const parallaxY = useTransform(
+    scrollYProgress, 
+    [0, 1], 
+    [0, isMobile ? mobileParallaxAmount : parallaxAmount]
+  );
   
   // Then use its value conditionally
   const yValue = useParallax ? parallaxY : 0;
@@ -594,7 +669,7 @@ const AnimatedSection = ({ children, variants, className, as = 'section', style,
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={variants}
-      className={className}
+      className={`${className} ${useParallax ? 'will-change-transform' : ''}`}
       style={{ 
         ...style, 
         y: yValue
@@ -657,7 +732,14 @@ const MotionContainer = styled(motion.div)`
   };
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
   min-height: 100vh; /* Ensure container is tall enough */
+  min-height: -webkit-fill-available; /* iOS height fix */
   position: relative; /* Ensure proper stacking context */
+  
+  @media (max-width: 768px) {
+    padding: 16px 12px;
+    border-radius: 0;
+    overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
+  }
 `;
 
 // Define CSS Keyframes for the gradient animation
@@ -703,6 +785,16 @@ const HeroSectionStyled = styled.section`
       rgba(255, 255, 255, 0) 70%
     );
     z-index: 0;
+  }
+  
+  @media (max-width: 768px) {
+    padding: ${props => props.$isAuthenticated ? '40px 20px' : '60px 20px'};
+    border-radius: 16px;
+    margin-bottom: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: ${props => props.$isAuthenticated ? '30px 16px' : '50px 16px'};
   }
 `;
 
@@ -781,6 +873,16 @@ const MotionFeatureGrid = styled(AnimatedSection).attrs({
   @media (max-width: 1200px) {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const MotionRecipeGrid = styled(AnimatedSection).attrs({ 
@@ -796,6 +898,16 @@ const MotionRecipeGrid = styled(AnimatedSection).attrs({
   @media (max-width: 1200px) {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const MotionStepGrid = styled(AnimatedSection).attrs({ 
@@ -810,6 +922,12 @@ const MotionStepGrid = styled(AnimatedSection).attrs({
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 40px; /* Keep larger gap for steps when stacked */
   }
 `;
 
@@ -839,6 +957,17 @@ const MotionRecipeCardWrapper = styled(AnimatedItem)`
 const MotionFeatureCard = styled(motion(FeatureCard))`
   transform-style: preserve-3d;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+  @media (max-width: 768px) {
+    min-height: 300px;
+  }
+  
+  @media (max-width: 480px) {
+    min-height: auto;
+  }
   
   &:hover {
     transform: translateY(-8px) scale(1.01);
@@ -848,6 +977,13 @@ const MotionFeatureCard = styled(motion(FeatureCard))`
 const MotionRecipeCard = styled(motion(RecipeCard))`
   transform-style: preserve-3d;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  @media (max-width: 480px) {
+    min-height: 350px;
+  }
 `;
 
 const MotionStepCard = styled(motion.div)`
@@ -965,6 +1101,13 @@ const SlideContainer = styled.div`
   
   @media (max-width: 768px) {
     height: 300px;
+    margin: 30px auto;
+  }
+  
+  @media (max-width: 480px) {
+    height: 250px;
+    margin: 20px auto;
+    border-radius: 12px;
   }
 `;
 
@@ -1024,7 +1167,7 @@ const Progress = styled.div`
   transition: width 0.1s linear;
 `;
 
-// Update the RecipeSlideshow component to integrate better with parallax effects
+// Update the RecipeSlideshow component to fix linter errors and restore progress animation
 const RecipeSlideshow = ({ theme }) => {
   const recipes = [
     { 
@@ -1066,20 +1209,35 @@ const RecipeSlideshow = ({ theme }) => {
   const [prevSlide, setPrevSlide] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState([]);
   const slideshowRef = useRef(null);
   const intervalRef = useRef(null);
   const progressIntervalRef = useRef(null);
   
-  // Add parallax effect to the slideshow
-  const { scrollYProgress } = useScroll({
-    target: slideshowRef,
-    offset: ["start end", "end start"]
-  });
+  // Add image preloading
+  useEffect(() => {
+    const preloadImages = async () => {
+      const promises = recipes.map((recipe) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = recipe.image;
+          img.onload = () => {
+            setImagesLoaded(prev => [...prev, recipe.id]);
+            resolve();
+          };
+          img.onerror = resolve; // Continue even if an image fails to load
+        });
+      });
+      
+      // Wait for all images to load or 5 seconds, whichever comes first
+      const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+      await Promise.race([Promise.all(promises), timeout]);
+    };
+    
+    preloadImages();
+  }, []);
   
-  // Create subtle scale and opacity effects based on scroll
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 0.98]);
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.8, 1, 0.9]);
-
+  // Add swipe gesture handling for mobile
   const goToNextSlide = useCallback(() => {
     if (!isAnimating) {
       setIsAnimating(true);
@@ -1103,7 +1261,77 @@ const RecipeSlideshow = ({ theme }) => {
       }, ANIMATION_DURATION + 200);
     }
   }, [currentSlide, isAnimating, recipes.length]);
-
+  
+  const goToPrevSlide = useCallback(() => {
+    if (!isAnimating) {
+      setIsAnimating(true);
+      setPrevSlide(currentSlide);
+      
+      // Set the new slide index (handle wrapping around to the end)
+      setCurrentSlide((prev) => (prev - 1 + recipes.length) % recipes.length);
+      
+      // Keep progress bar at 100% during transition
+      setProgress(100);
+      
+      // Reset progress after animation completes
+      setTimeout(() => {
+        setProgress(0);
+        setIsAnimating(false);
+      }, ANIMATION_DURATION);
+      
+      // Keep the previous slide reference a bit longer for the animation
+      setTimeout(() => {
+        setPrevSlide(null);
+      }, ANIMATION_DURATION + 200);
+    }
+  }, [currentSlide, isAnimating, recipes.length]);
+  
+  // Handle touch events for mobile swipe
+  useEffect(() => {
+    if (!slideshowRef.current) return;
+    
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    const handleTouchStart = (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    };
+    
+    const handleTouchEnd = (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    };
+    
+    const handleSwipe = () => {
+      // Detect direction
+      if (touchStartX - touchEndX > 50) {
+        // Swipe left - next slide
+        goToNextSlide();
+      } else if (touchEndX - touchStartX > 50) {
+        // Swipe right - previous slide
+        goToPrevSlide();
+      }
+    };
+    
+    const slideElement = slideshowRef.current;
+    slideElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    slideElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    return () => {
+      if (slideElement) {
+        slideElement.removeEventListener('touchstart', handleTouchStart);
+        slideElement.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [goToNextSlide, goToPrevSlide]);
+  
+  // Add parallax effect to the slideshow
+  const { scrollYProgress } = useScroll({
+    target: slideshowRef,
+    offset: ["start end", "end start"]
+  });
+  
+  // Restore progress animation
   useEffect(() => {
     // Don't start progress animation during slide transition
     if (isAnimating) return;
@@ -1141,6 +1369,10 @@ const RecipeSlideshow = ({ theme }) => {
       clearInterval(intervalRef.current);
     };
   }, [goToNextSlide, progress, isAnimating]);
+  
+  // Create subtle scale and opacity effects based on scroll
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 0.98]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.8, 1, 0.9]);
 
   return (
     <motion.div
@@ -1151,6 +1383,7 @@ const RecipeSlideshow = ({ theme }) => {
         willChange: 'transform, opacity',
         transformStyle: 'preserve-3d'
       }}
+      className="will-change-transform"
     >
       <SlideContainer theme={theme}>
         <ProgressBar>
@@ -1166,6 +1399,9 @@ const RecipeSlideshow = ({ theme }) => {
                 $active={index === currentSlide}
                 $entering={index === currentSlide && prevSlide !== null}
                 $exiting={index === prevSlide}
+                style={{ 
+                  opacity: imagesLoaded.includes(recipe.id) ? undefined : 0 
+                }}
               />
             )
           ))}
@@ -1200,11 +1436,24 @@ const SimplePage = ({ children, theme }) => {
   );
 };
 
-// Wrap the HomePage component with error handling
+// Add a helper to check if menu button is visible
+const checkMenuVisibility = () => {
+  // Check if the hamburger menu is currently displayed
+  // This will return true for mobile devices where the menu button is visible
+  const header = document.querySelector('header');
+  if (!header) return false;
+  
+  const hamburgerButton = header.querySelector('button[aria-label="Menu"]');
+  return hamburgerButton && window.getComputedStyle(hamburgerButton).display !== 'none';
+};
+
+// Add handlers to ensure menu interaction works properly
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const [hasError, setHasError] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const heroSubtitleText = isAuthenticated 
     ? "Entdecke Rezepte basierend auf deinen Zutaten, erhalte Unterstützung beim Kochen und profitiere von intelligenten Funktionen für ein besseres Kocherlebnis."
@@ -1220,6 +1469,48 @@ const HomePage = () => {
     window.addEventListener('error', handleError);
     return () => window.removeEventListener('error', handleError);
   }, []);
+  
+  // Detect screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      
+      // Check hamburger menu visibility on resize
+      setMenuVisible(checkMenuVisibility());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial check
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Check for hamburger menu clicks
+  useEffect(() => {
+    // Handle clicks on the hamburger menu
+    const handleMenuClick = () => {
+      // Update state based on current menu visibility
+      setTimeout(() => {
+        setMenuVisible(document.body.style.overflow === 'hidden');
+      }, 100);
+    };
+    
+    const hamburgerButton = document.querySelector('button[aria-label="Menu"]');
+    if (hamburgerButton) {
+      hamburgerButton.addEventListener('click', handleMenuClick);
+      return () => hamburgerButton.removeEventListener('click', handleMenuClick);
+    }
+  }, [isMobile]);
+  
+  // Handle link clicks to close the menu
+  const handleLinkClick = () => {
+    if (menuVisible) {
+      const hamburgerButton = document.querySelector('button[aria-label="Menu"]');
+      if (hamburgerButton) {
+        hamburgerButton.click(); // Close the menu by clicking the button
+      }
+    }
+  };
 
   // If we have an error, render a simplified page
   if (hasError) {
@@ -1254,6 +1545,7 @@ const HomePage = () => {
         animate="visible" 
         variants={{ visible: { transition: { } } }}
         theme={theme}
+        onClick={menuVisible ? handleLinkClick : undefined}
       >
         <HeroSectionStyled 
           $isAuthenticated={isAuthenticated}
@@ -1278,16 +1570,16 @@ const HomePage = () => {
             
             {isAuthenticated ? (
               <motion.div variants={heroButtonAppear}><ButtonWrapper>
-                <GradientButtonLink to="/recipes" $variant="primary">
+                <GradientButtonLink to="/recipes" $variant="primary" onClick={handleLinkClick}>
                   Rezepte entdecken
                 </GradientButtonLink>
               </ButtonWrapper></motion.div>
             ) : (
               <motion.div variants={heroButtonAppear}><HeroButtons>
-                <GradientButtonLink to="/register" $variant="primary">
+                <GradientButtonLink to="/register" $variant="primary" onClick={handleLinkClick}>
                   Kostenlos starten
                 </GradientButtonLink>
-                <GradientButtonLink to="/login" $variant="variant">
+                <GradientButtonLink to="/login" $variant="variant" onClick={handleLinkClick}>
                   Anmelden
                 </GradientButtonLink>
               </HeroButtons></motion.div>
@@ -1344,15 +1636,15 @@ const HomePage = () => {
         {!isAuthenticated && (
           <div style={{ 
             display: 'flex', 
-            flexDirection: 'row', 
+            flexDirection: isMobile ? 'column' : 'row', 
             flexWrap: 'wrap', 
-            gap: '3rem',
+            gap: isMobile ? '2rem' : '3rem',
             margin: '0',
-            padding: '2rem 0'
+            padding: isMobile ? '1rem 0' : '2rem 0'
           }}>
             <div style={{ 
               flex: '1 1 48%', 
-              minWidth: '400px',
+              minWidth: isMobile ? '100%' : '400px',
               maxWidth: '100%',
               margin: '0'
             }}>
@@ -1370,7 +1662,7 @@ const HomePage = () => {
             
             <div style={{ 
               flex: '1 1 48%', 
-              minWidth: '400px',
+              minWidth: isMobile ? '100%' : '400px',
               maxWidth: '100%',
               margin: '0'
             }}>
