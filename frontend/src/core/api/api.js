@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Bei externem Zugriff verwenden wir einen relativen Pfad
+// Dies erfordert einen Proxy im Frontend-Container oder einen Reverse Proxy
+const API_URL = '/api';
+console.log('Using API URL:', API_URL);
 
 // Create axios instance with base URL
 const api = axios.create({

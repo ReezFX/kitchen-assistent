@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import styled from 'styled-components';
+import { useParams, useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useAIService } from '../../hooks/useAIService';
-import Button from '../common/Button';
 import ImageUpload from '../common/ImageUpload';
 import { FaUtensils, FaClock, FaArrowRight, FaArrowLeft, FaEdit, FaTrash, FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
-import { GradientButton } from '../ui/GradientButton';
+// import LoadingSpinner from '../common/LoadingSpinner'; // Auskommentiert: Modul nicht gefunden
+// import ErrorMessage from '../common/ErrorMessage'; // Auskommentiert: Modul nicht gefunden
+// import InteractiveAIChat from './InteractiveAIChat'; // Auskommentiert: Modul nicht gefunden
+// import { toast } from 'react-toastify'; // Auskommentiert: Modul nicht gefunden
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Auskommentiert: Modul nicht gefunden
 
 // --- Styles copied from ExampleRecipeDetail.jsx ---
 
@@ -710,7 +713,8 @@ const Loading = styled.div`
   padding: 40px;
 `;
 
-const ErrorMessage = styled.div`
+// Manuell definierte Error Message Komponente als Ersatz
+const ErrorMessageStyled = styled.div` 
   color: var(--color-danger);
   padding: 20px;
   border-radius: 12px;
@@ -735,11 +739,11 @@ const RecipeDetail = () => {
   const [imageFile, setImageFile] = useState(null);
   const [isImageUpdating, setIsImageUpdating] = useState(false);
   
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Hallo! Ich bin dein Kochassistent. Stelle mir Fragen zu diesem Rezept.', isUser: false }
-  ]);
-  const [input, setInput] = useState('');
-  const messagesEndRef = useRef(null);
+  // const [messages, setMessages] = useState([
+  //   { id: 1, text: 'Hallo! Ich bin dein Kochassistent. Stelle mir Fragen zu diesem Rezept.', isUser: false }
+  // ]);
+  // const [input, setInput] = useState('');
+  // const messagesEndRef = useRef(null);
   
   const [isCookMode, setIsCookMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -823,9 +827,9 @@ const RecipeDetail = () => {
     return `<div>${safeText}</div>`;
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, [messages]);
 
   const createRecipeContext = useCallback((currentRecipe) => {
     if (!currentRecipe) return '';
@@ -848,66 +852,66 @@ const RecipeDetail = () => {
     return context.substring(0, 4000);
   }, []);
 
-  const formatAssistantText = (text) => {
-    if (!text) return '';
-    let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    let lines = formattedText.split('\\n');
-    let isList = false;
-    let resultLines = [];
-    let listContent = '';
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('*') && !trimmedLine.startsWith('**')) {
-        if (!isList) {
-          isList = true;
-          listContent = '<ul>';
-        }
-        const listItemText = trimmedLine.substring(1).trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        listContent += `<li>${listItemText}</li>`;
-      } else {
-        if (isList) {
-          isList = false;
-          listContent += '</ul>';
-          resultLines.push(listContent);
-          listContent = '';
-        }
-        resultLines.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-      }
-    }
-    if (isList) {
-      listContent += '</ul>';
-      resultLines.push(listContent);
-    }
-    return resultLines.join('<br />');
-  };
+  // const formatAssistantText = (text) => {
+  //   if (!text) return '';
+  //   let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  //   let lines = formattedText.split('\\n');
+  //   let isList = false;
+  //   let resultLines = [];
+  //   let listContent = '';
+  //   for (let i = 0; i < lines.length; i++) {
+  //     const line = lines[i];
+  //     const trimmedLine = line.trim();
+  //     if (trimmedLine.startsWith('*') && !trimmedLine.startsWith('**')) {
+  //       if (!isList) {
+  //         isList = true;
+  //         listContent = '<ul>';
+  //       }
+  //       const listItemText = trimmedLine.substring(1).trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  //       listContent += `<li>${listItemText}</li>`;
+  //     } else {
+  //       if (isList) {
+  //         isList = false;
+  //         listContent += '</ul>';
+  //         resultLines.push(listContent);
+  //         listContent = '';
+  //       }
+  //       resultLines.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+  //     }
+  //   }
+  //   if (isList) {
+  //     listContent += '</ul>';
+  //     resultLines.push(listContent);
+  //   }
+  //   return resultLines.join('<br />');
+  // };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (input.trim() === '' || !recipe) return;
-    const userMessage = { id: Date.now(), text: input, isUser: true };
-    setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
-    setInput('');
-    try {
-      const recipeContext = createRecipeContext(recipe);
-      const assistantResponse = await getAssistance(currentInput, recipeContext);
-      setMessages(prev => [
-        ...prev, 
-        { id: Date.now() + 1, text: assistantResponse, isUser: false }
-      ]);
-    } catch (error) {
-      console.error('Fehler beim Kochassistenten:', error);
-      setMessages(prev => [
-        ...prev, 
-        { 
-          id: Date.now() + 1, 
-          text: 'Entschuldigung, ich konnte deine Frage nicht beantworten.', 
-          isUser: false 
-        }
-      ]);
-    }
-  };
+  // const handleSendMessage = async (e) => {
+  //   e.preventDefault();
+  //   if (input.trim() === '' || !recipe) return;
+  //   const userMessage = { id: Date.now(), text: input, isUser: true };
+  //   setMessages(prev => [...prev, userMessage]);
+  //   const currentInput = input;
+  //   setInput('');
+  //   try {
+  //     const recipeContext = createRecipeContext(recipe);
+  //     const assistantResponse = await getAssistance(currentInput, recipeContext);
+  //     setMessages(prev => [
+  //       ...prev, 
+  //       { id: Date.now() + 1, text: assistantResponse, isUser: false }
+  //     ]);
+  //   } catch (error) {
+  //     console.error('Fehler beim Kochassistenten:', error);
+  //     setMessages(prev => [
+  //       ...prev, 
+  //       { 
+  //         id: Date.now() + 1, 
+  //         text: 'Entschuldigung, ich konnte deine Frage nicht beantworten.', 
+  //         isUser: false 
+  //       }
+  //     ]);
+  //   }
+  // };
 
   const handleImageChange = (file) => {
     setImageFile(file);
@@ -981,6 +985,7 @@ const RecipeDetail = () => {
     return (
       <PageContainer>
         <StatusContainer>
+          {/* <LoadingSpinner /> // Auskommentiert */}
           <Loading>Rezept wird geladen...</Loading>
         </StatusContainer>
       </PageContainer>
@@ -991,7 +996,7 @@ const RecipeDetail = () => {
     return (
       <PageContainer>
         <StatusContainer>
-          <ErrorMessage>{localError || recipesError}</ErrorMessage>
+          <ErrorMessageStyled>{localError || recipesError}</ErrorMessageStyled> {/* Ersetzt ErrorMessage */} 
           <ButtonContainer style={{ borderTop: 'none', marginTop: 0, justifyContent: 'space-around' }}>
             <ActionButton onClick={handleRetry}>
               Erneut versuchen
@@ -1009,7 +1014,7 @@ const RecipeDetail = () => {
     return (
       <PageContainer>
         <StatusContainer>
-          <ErrorMessage>Rezept nicht gefunden.</ErrorMessage>
+          <ErrorMessageStyled>Rezept nicht gefunden.</ErrorMessageStyled> {/* Ersetzt ErrorMessage */} 
            <ButtonContainer style={{ borderTop: 'none', marginTop: 0, justifyContent: 'center' }}>
             <ActionButton onClick={() => navigate('/recipes')} >
               Zurück zur Übersicht
@@ -1087,10 +1092,10 @@ const RecipeDetail = () => {
                   </ActionButton>
                 </div>
               )}
-              {localError && imageFile && ( 
-                <ErrorMessage style={{ marginTop: '16px' }}>
+              {localError && imageFile && (
+                <ErrorMessageStyled style={{ marginTop: '16px' }}>
                   {localError}
-                </ErrorMessage>
+                </ErrorMessageStyled>
               )}
             </ImageSection>
           ) : (
@@ -1226,7 +1231,8 @@ const RecipeDetail = () => {
           </Section>
         )}
         
-        {recipe && (
+        {/* Auskommentierter Assistant Section Block */} 
+        {/* {recipe && (
           <AssistantSection>
             <AssistantTitle>Kochassistent</AssistantTitle>
             <AssistantDescription>Stelle Fragen zu diesem Rezept - der Assistent hilft dir bei der Zubereitung, gibt Tipps oder erklärt Techniken.</AssistantDescription>
@@ -1236,7 +1242,7 @@ const RecipeDetail = () => {
                 {messages.map(message => (
                   <MessageBubble key={message.id} $isUser={message.isUser}>
                     {message.isUser ? 
-                      message.text : 
+                      message.text :
                       <div dangerouslySetInnerHTML={{ __html: formatAssistantText(message.text) }} />
                     }
                   </MessageBubble>
@@ -1267,7 +1273,7 @@ const RecipeDetail = () => {
               </InputContainer>
             </ChatContainer>
           </AssistantSection>
-        )}
+        )} */}
         
         <ButtonContainer>
           <ActionButton onClick={() => navigate('/recipes')} >

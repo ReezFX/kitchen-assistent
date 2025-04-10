@@ -12,7 +12,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
+      # Entferne die statische API URL, damit unsere dynamische Logik im JS-Code greift
+      # - REACT_APP_API_URL=http://localhost:5000/api
       - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
@@ -23,8 +24,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    ports:
-      - "5000:5000"
+    # Entferne die externe Port-Freigabe, nur intern erreichbar
+    # ports:
+    #   - "5000:5000"
+    expose:
+      - "5000"  # Nur intern im Docker-Netzwerk verfügbar
     volumes:
       - ./backend:/app
       - /app/node_modules

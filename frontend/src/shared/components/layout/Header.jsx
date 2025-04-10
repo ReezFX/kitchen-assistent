@@ -14,6 +14,8 @@ const HeaderContainer = styled.header`
   z-index: 100;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  width: 100%;
+  overflow-x: hidden;
 `;
 
 const HeaderInner = styled.div`
@@ -23,6 +25,7 @@ const HeaderInner = styled.div`
   padding: 0.75rem 1.25rem;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
   
   @media (min-width: 768px) {
     padding: 1rem 2rem;

@@ -17,10 +17,40 @@ const recipeRoutes = require('./routes/recipe.routes');
 // Initialize app
 const app = express();
 
+// Tell Express to trust the X-Forwarded-* headers set by the reverse proxy
+// Adjust the number '1' based on how many proxies are in front of your app
+app.set('trust proxy', 1);
+
 // Middleware
-// Configure CORS to allow specific origin and credentials
+
+// Verbesserte CORS-Konfiguration für Entwicklungsumgebungen
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow frontend origin
+  origin: function(origin, callback) {
+    // In development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
+      // Log die Anfragen für Debugging-Zwecke
+      if (origin) {
+        console.log(`CORS-Anfrage von Origin: ${origin}`);
+      } else {
+        console.log('CORS-Anfrage ohne Origin-Header');
+      }
+      return callback(null, true);
+    }
+    
+    // Für Produktionsumgebungen hier strengere Regeln implementieren
+    // z.B. eine Allowlist von Domains
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      // Weitere Produktion-Domains hier hinzufügen
+    ];
+    
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blockiert für Origin: ${origin}`);
+      callback(new Error('CORS nicht erlaubt für diese Origin'), false);
+    }
+  },
   credentials: true // Allow cookies/authorization headers
 }));
 

@@ -7,6 +7,9 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   background-color: var(--color-gray-50);
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 `;
 
 const Main = styled.main`
@@ -15,6 +18,10 @@ const Main = styled.main`
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    padding: 16px 12px;
+  }
 `;
 
 const Layout = ({ children }) => {

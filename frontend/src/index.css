@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix for horizontal scrolling */
+html, body, #root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 :root {
   /* Food-themed color palette in HSL */
   --color-blue-gray: hsla(210, 50%, 60%, 1);  /* Cool accent color */
