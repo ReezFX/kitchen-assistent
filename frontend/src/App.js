@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import Layout from './shared/components/layout/Layout';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import { AuthProvider } from './shared/context/AuthContext';
@@ -12,6 +12,7 @@ import LoginPage from './modules/auth/LoginPage';
 import RegisterPage from './modules/auth/RegisterPage';
 import NotFoundPage from './shared/components/NotFoundPage';
 import RecipeDetail from './shared/components/recipe/RecipeDetail';
+import ExampleRecipeDetail from './shared/components/recipe/ExampleRecipeDetail';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/example-recipe/:id" element={<ExampleRecipeDetailWrapper />} />
             
             {/* Protected Routes - Require authentication */}
             <Route element={<ProtectedRoute />}>
@@ -39,5 +41,11 @@ function App() {
     </AuthProvider>
   );
 }
+
+// Wrapper component to pass the recipe ID to ExampleRecipeDetail
+const ExampleRecipeDetailWrapper = () => {
+  const { id } = useParams();
+  return <ExampleRecipeDetail recipeId={id} />;
+};
 
 export default App;

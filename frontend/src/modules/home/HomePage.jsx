@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../shared/components/common/Button';
 import Card from '../../shared/components/common/Card';
 import SavedRecipesList from '../../shared/components/recipe/SavedRecipesList';
@@ -501,7 +501,96 @@ const USPText = styled.p`
   max-width: 700px;
 `;
 
+const ExampleRecipesSection = styled.section`
+  margin-bottom: 60px;
+`;
+
+const RecipeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+`;
+
+const RecipeCardWrapper = styled.div`
+  position: relative;
+  height: 100%;
+  border-radius: 16px;
+`;
+
+const RecipeCard = styled(Card)`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: translateY(-4px);
+  }
+`;
+
+const RecipeTitle = styled.h3`
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+`;
+
+const RecipeInfo = styled.div`
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+`;
+
+const Tag = styled.span`
+  display: inline-block;
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-600);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+`;
+
+const ThumbnailContainer = styled.div`
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  position: relative;
+  background-color: var(--color-gray-100);
+`;
+
+const RecipeThumbnail = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-accent) 20%);
+  
+  ${RecipeCard}:hover & {
+    transform: scale(1.05);
+  }
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+`;
+
+const RecipeDescription = styled.p`
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+`;
+
 const HomePage = () => {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   return (
@@ -565,6 +654,133 @@ const HomePage = () => {
             </USPContent>
           </USPCard>
         </USPSection>
+      )}
+      
+      {!isAuthenticated && (
+        <ExampleRecipesSection>
+          <SectionHeader>
+            <GradientTitle>Beispielrezepte aus Resten</GradientTitle>
+            <SectionDescription>
+              Sieh dir an, was du mit übrigen Zutaten zaubern kannst
+            </SectionDescription>
+          </SectionHeader>
+          
+          <RecipeGrid>
+            <RecipeCardWrapper>
+              <GlowingEffect
+                variant="carrot"
+                spread={40}
+                glow={true}
+                disabled={false}
+                proximity={64}
+                inactiveZone={0.01}
+                borderWidth={2}
+              />
+              <RecipeCard>
+                <ThumbnailContainer>
+                  <RecipeThumbnail>🥦</RecipeThumbnail>
+                </ThumbnailContainer>
+                
+                <RecipeTitle>Gemüsereste-Frittata</RecipeTitle>
+                
+                <RecipeInfo>
+                  <div>Schwierigkeit: Einfach</div>
+                  <div>Zubereitungszeit: 25 Min.</div>
+                </RecipeInfo>
+                
+                <RecipeDescription>
+                  Verwerte übrige Gemüsereste wie Brokkoli, Paprika und Kartoffeln in einer leckeren Frittata mit Eiern und Käse.
+                </RecipeDescription>
+                
+                <TagsContainer>
+                  <Tag>KI-generiert</Tag>
+                  <Tag>Vegetarisch</Tag>
+                  <Tag>Resteverwertung</Tag>
+                </TagsContainer>
+                
+                <Button as={Link} to="/example-recipe/gemuesefrittata" variant="primary">
+                  Rezept ansehen
+                </Button>
+              </RecipeCard>
+            </RecipeCardWrapper>
+            
+            <RecipeCardWrapper>
+              <GlowingEffect
+                variant="mint"
+                spread={40}
+                glow={true}
+                disabled={false}
+                proximity={64}
+                inactiveZone={0.01}
+                borderWidth={2}
+              />
+              <RecipeCard>
+                <ThumbnailContainer>
+                  <RecipeThumbnail>🍚</RecipeThumbnail>
+                </ThumbnailContainer>
+                
+                <RecipeTitle>Gebratener Reis mit Resten</RecipeTitle>
+                
+                <RecipeInfo>
+                  <div>Schwierigkeit: Einfach</div>
+                  <div>Zubereitungszeit: 20 Min.</div>
+                </RecipeInfo>
+                
+                <RecipeDescription>
+                  Aus übriggebliebenem Reis und kleinen Mengen Gemüse, Ei und Fleisch entsteht ein köstliches Gericht in nur einer Pfanne.
+                </RecipeDescription>
+                
+                <TagsContainer>
+                  <Tag>KI-generiert</Tag>
+                  <Tag>Schnell</Tag>
+                  <Tag>One-Pot</Tag>
+                </TagsContainer>
+                
+                <Button as={Link} to="/example-recipe/gebratenerreis" variant="primary">
+                  Rezept ansehen
+                </Button>
+              </RecipeCard>
+            </RecipeCardWrapper>
+            
+            <RecipeCardWrapper>
+              <GlowingEffect
+                variant="turmeric"
+                spread={40}
+                glow={true}
+                disabled={false}
+                proximity={64}
+                inactiveZone={0.01}
+                borderWidth={2}
+              />
+              <RecipeCard>
+                <ThumbnailContainer>
+                  <RecipeThumbnail>🍲</RecipeThumbnail>
+                </ThumbnailContainer>
+                
+                <RecipeTitle>Suppe aus Gemüseenden</RecipeTitle>
+                
+                <RecipeInfo>
+                  <div>Schwierigkeit: Mittel</div>
+                  <div>Zubereitungszeit: 45 Min.</div>
+                </RecipeInfo>
+                
+                <RecipeDescription>
+                  Statt wegzuwerfen: Aus Gemüseenden, -schalen und übrigen Kräutern wird eine nahrhafte und leckere Suppe.
+                </RecipeDescription>
+                
+                <TagsContainer>
+                  <Tag>KI-generiert</Tag>
+                  <Tag>Vegan</Tag>
+                  <Tag>Zero-Waste</Tag>
+                </TagsContainer>
+                
+                <Button as={Link} to="/example-recipe/gemuesesuppe" variant="primary">
+                  Rezept ansehen
+                </Button>
+              </RecipeCard>
+            </RecipeCardWrapper>
+          </RecipeGrid>
+        </ExampleRecipesSection>
       )}
       
       {!isAuthenticated && (

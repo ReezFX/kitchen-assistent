@@ -26,7 +26,7 @@ const UploadBox = styled.div`
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  background-color: ${props => props.isDragging ? '#f3f4f6' : 'transparent'};
+  background-color: ${props => props.$isDragging ? '#f3f4f6' : 'transparent'};
   
   &:hover {
     border-color: #4f46e5;
@@ -252,11 +252,11 @@ const ImageUpload = ({
       
       {!previewUrl ? (
         <UploadBox 
-          isDragging={isDragging}
+          onClick={handleButtonClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={handleButtonClick}
+          $isDragging={isDragging}
         >
           <p>Klicke oder ziehe ein Bild hierher</p>
           <Button type="button" disabled={isCompressing}>

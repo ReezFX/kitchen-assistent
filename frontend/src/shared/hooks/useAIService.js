@@ -5,11 +5,11 @@ export const useAIService = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const generateRecipe = async (ingredients, preferences) => {
+  const generateRecipe = async (ingredients, preferences, systemPrompt) => {
     setIsLoading(true);
     setError(null);
     try {
-      const recipe = await aiService.generateRecipe(ingredients, preferences);
+      const recipe = await aiService.generateRecipe(ingredients, preferences, systemPrompt);
       setIsLoading(false);
       return recipe;
     } catch (err) {

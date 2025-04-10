@@ -1,27 +1,28 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useAIService } from '../../hooks/useAIService';
 import Button from '../common/Button';
 import ImageUpload from '../common/ImageUpload';
 import { FaUtensils, FaClock, FaArrowRight, FaArrowLeft, FaEdit, FaTrash, FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
+import { GradientButton } from '../ui/GradientButton';
 
-// --- Base Styles inspired by Apple Design ---
+// --- Styles copied from ExampleRecipeDetail.jsx ---
 
 const PageContainer = styled.div`
-  background-color: #f9f9f9; // Slightly off-white background
+  background-color: var(--color-background-light);
   min-height: 100vh;
-  padding: 0; // Remove padding, handle within sections
+  padding: 0;
 `;
 
 const ContentWrapper = styled.div`
   max-width: 900px;
   margin: 0 auto;
-  padding: 40px 20px; // Main content padding
-  background-color: #ffffff; // White content area
+  padding: 40px 20px;
+  background-color: var(--color-background);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-radius: 16px; // Softer corners
+  border-radius: 16px;
   margin-top: 30px;
   margin-bottom: 30px;
 `;
@@ -29,42 +30,22 @@ const ContentWrapper = styled.div`
 const RecipeHeader = styled.header`
   margin-bottom: 40px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e5e5e5; // Lighter separator
+  border-bottom: 1px solid var(--color-gray-200);
 `;
 
 const HeaderTopRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; // Align items to the top
+  align-items: flex-start;
   margin-bottom: 24px;
 `;
 
 const RecipeTitle = styled.h1`
-  font-size: 34px; // Larger title
+  font-size: 34px;
   font-weight: 700;
-  color: #1d1d1f; // Apple's near-black
+  color: var(--color-text-primary);
   line-height: 1.2;
   margin: 0;
-`;
-
-const EditButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  color: #007aff; // Apple blue
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px; // Easier click target
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  margin-left: 16px; // Space from title
-
-  &:hover {
-    background-color: rgba(0, 122, 255, 0.1);
-  }
 `;
 
 const RecipeImageWrapper = styled.div`
@@ -72,13 +53,17 @@ const RecipeImageWrapper = styled.div`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  aspect-ratio: 16 / 9; // Maintain aspect ratio
-  background-color: #f0f0f0; // Placeholder color
+  aspect-ratio: 16 / 9;
+  background-color: var(--color-gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 100px;
 
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover; // Cover the area
+    object-fit: cover;
     display: block;
   }
 `;
@@ -86,7 +71,7 @@ const RecipeImageWrapper = styled.div`
 const ImageSection = styled.div`
   margin-bottom: 24px;
   padding: 20px;
-  background-color: #f2f2f7; // Light gray background for edit section
+  background-color: #f2f2f7;
   border-radius: 12px;
 
   h3 {
@@ -107,19 +92,19 @@ const TagsContainer = styled.div`
 
 const Tag = styled.span`
   display: inline-block;
-  background-color: #e5e5e5; // Lighter gray
-  color: #555; // Darker gray text
+  background-color: var(--color-gray-200);
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
   padding: 5px 12px;
-  border-radius: 16px; // More rounded pills
+  border-radius: 16px;
 `;
 
 const RecipeMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 24px; // Increased gap
-  color: #636366; // Apple's secondary text color
+  gap: 24px;
+  color: var(--color-text-secondary);
   font-size: 15px;
 `;
 
@@ -129,17 +114,16 @@ const MetaItem = styled.div`
   gap: 8px;
   
   span {
-    color: #636366; // Secondary text
+    color: var(--color-text-secondary);
   }
   
   strong {
-    color: #1d1d1f; // Primary text
+    color: var(--color-text-primary);
     font-weight: 600;
   }
 `;
 
 // --- Section Styles ---
-
 const Section = styled.section`
   margin-bottom: 40px;
 `;
@@ -147,10 +131,10 @@ const Section = styled.section`
 const SectionTitle = styled.h2`
   font-size: 24px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: var(--color-text-primary);
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #e5e5e5; // Subtle separator
+  border-bottom: 1px solid var(--color-gray-200);
 `;
 
 const SectionHeader = styled.div`
@@ -159,47 +143,44 @@ const SectionHeader = styled.div`
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #e5e5e5; // Subtle separator
+  border-bottom: 1px solid var(--color-gray-200);
 `;
 
 // --- Ingredient Styles ---
-
 const IngredientList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  // Adjust grid columns for better spacing
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
 `;
 
 const Ingredient = styled.li`
   display: flex;
-  align-items: baseline; // Align text baselines
+  align-items: baseline;
   gap: 10px;
   padding: 12px;
-  background-color: #f2f2f7; // Light gray background
+  background-color: var(--color-gray-100);
   border-radius: 10px;
   font-size: 15px;
   
   strong {
-    color: #1d1d1f; // Primary text
+    color: var(--color-text-primary);
     font-weight: 600;
-    min-width: 70px; // Adjust as needed
+    min-width: 70px;
     text-align: right;
   }
   
   span {
-    color: #3c3c43; // Slightly darker secondary
+    color: var(--color-text-secondary);
     flex-grow: 1;
   }
 `;
 
 // --- Steps Styles ---
-
 const StepsList = styled.ol`
-  list-style: none; // Remove default list styling
+  list-style: none;
   padding: 0;
   margin: 0;
   counter-reset: steps;
@@ -212,14 +193,13 @@ const Step = styled.li`
   counter-increment: steps;
   display: flex;
   gap: 16px;
-  background-color: #ffffff; // White background for steps
+  background-color: var(--color-background);
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); // Subtle shadow
-  position: relative; // For the number
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  position: relative;
   line-height: 1.6;
 
-  // Step Number Styling (Apple-like)
   &::before {
     content: counter(steps);
     display: flex;
@@ -227,13 +207,13 @@ const Step = styled.li`
     justify-content: center;
     min-width: 32px;
     height: 32px;
-    background-color: #f2f2f7; // Light gray background
-    color: #636366; // Secondary text color
+    background-color: var(--color-gray-100);
+    color: var(--color-text-secondary);
     font-weight: 600;
     font-size: 16px;
     border-radius: 50%;
-    flex-shrink: 0; // Prevent shrinking
-    margin-top: 2px; // Align with first line of text
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   .step-content {
@@ -244,13 +224,13 @@ const Step = styled.li`
     font-weight: 600;
     font-size: 17px;
     margin-bottom: 8px;
-    color: #1d1d1f;
+    color: var(--color-text-primary);
   }
   
   .step-description,
-  & > div:not(.step-title):not(.step-description) { // Target direct content if no specific classes
+  & > div:not(.step-title):not(.step-description) {
     font-size: 15px;
-    color: #3c3c43;
+    color: var(--color-text-secondary);
   }
   
   ul {
@@ -263,169 +243,90 @@ const Step = styled.li`
     }
   }
 
-  strong { // Style bold text within steps
+  strong {
     font-weight: 600;
-    color: #1d1d1f;
+    color: var(--color-text-primary);
   }
 `;
 
 // --- Nutrition Styles ---
-
 const NutritionSection = styled.div`
-  background-color: #f2f2f7; // Light background
+  background-color: var(--color-gray-100);
   border-radius: 12px;
   padding: 20px;
 `;
 
 const NutritionGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); // Adjust size
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 16px;
 `;
 
 const NutritionItem = styled.div`
   padding: 16px;
-  background-color: #ffffff; // White cards for items
+  background-color: var(--color-background);
   border-radius: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  align-items: center; // Center content
+  align-items: center;
   text-align: center;
   
-  span:first-child { // Label (e.g., 'Kalorien')
+  span:first-child {
     font-weight: 500;
-    color: #636366; // Secondary text
+    color: var(--color-text-secondary);
     margin-bottom: 6px;
     font-size: 14px;
   }
   
-  span:last-child { // Value (e.g., '500 kcal')
+  span:last-child {
     font-size: 20px;
     font-weight: 600;
-    color: #1d1d1f;
+    color: var(--color-text-primary);
   }
 `;
 
-const NutritionDetail = styled.div`
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e5e5;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-`;
-
-const AdditionalNutrientItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  border: 1px solid #e5e5e5;
-  font-size: 14px;
-  
-  span:first-child {
-    font-weight: 500;
-    color: #3c3c43;
-  }
-  
-  span:last-child {
-    font-weight: 600;
-    color: #1d1d1f;
-  }
-`;
-
+// --- Tips/Notes Styles (can combine if structure is similar) ---
 const NotesSection = styled.div`
   margin-top: 20px;
   padding: 16px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #e5e5e5;
-
-  h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1d1d1f;
-  }
-
-  p,
-  li {
-    color: #3c3c43;
-    line-height: 1.5;
-    font-size: 15px;
-  }
+  background-color: var(--color-gray-100);
+  border-radius: 12px;
 
   ul {
-    padding-left: 20px;
-    margin-bottom: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
     li {
-      margin-bottom: 8px;
-    }
-  }
-`;
-
-const WarningSection = styled.div`
-  background-color: #fffbeb; 
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid #fde68a; // Lighter yellow border
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  margin-top: 20px;
-
-  .icon {
-    background-color: #f59e0b; 
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 16px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .text {
-    h4 {
-      margin: 0 0 4px 0;
-      color: #92400e;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    p {
-      color: #92400e;
-      margin: 0;
-      font-size: 15px;
+      color: var(--color-text-secondary);
       line-height: 1.5;
+      font-size: 15px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--color-gray-200);
+      &:last-child {
+        border-bottom: none;
+      }
     }
   }
 `;
 
-// --- Assistant Styles ---
-
+// --- Assistant Styles (Copied from Example) ---
 const AssistantSection = styled.div`
   margin-top: 40px;
   padding-top: 30px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--color-gray-200);
 `;
 
 const AssistantTitle = styled.h2`
   font-size: 24px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: var(--color-text-primary);
   margin-bottom: 12px;
 `;
 
 const AssistantDescription = styled.p`
   font-size: 15px;
-  color: #636366;
+  color: var(--color-text-secondary);
   margin-bottom: 24px;
   line-height: 1.5;
 `;
@@ -433,11 +334,11 @@ const AssistantDescription = styled.p`
 const ChatContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 450px; // Slightly taller
-  border: 1px solid #dcdcdc; // Subtle border
+  height: 300px;
+  border: 1px solid var(--color-gray-200);
   border-radius: 12px;
-  overflow: hidden; // Clip content
-  background-color: #f2f2f7; // Light background for chat area
+  overflow: hidden;
+  background-color: var(--color-gray-100);
 `;
 
 const MessagesContainer = styled.div`
@@ -451,24 +352,24 @@ const MessagesContainer = styled.div`
 
 const MessageBubble = styled.div`
   padding: 12px 18px;
-  border-radius: 20px; // More rounded bubbles
+  border-radius: 20px;
   max-width: 75%;
   word-break: break-word;
   line-height: 1.5;
   font-size: 15px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-  ${props => props.isUser ? `
+  ${props => props.$isUser ? `
     align-self: flex-end;
-    background-color: #007aff; // Apple blue
+    background-color: var(--color-primary);
     color: white;
-    border-bottom-right-radius: 6px; // Subtle tail
+    border-bottom-right-radius: 6px;
   ` : `
     align-self: flex-start;
-    background-color: #ffffff; // White bubbles for assistant
-    color: #1d1d1f;
-    border: 1px solid #e5e5e5;
-    border-bottom-left-radius: 6px; // Subtle tail
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-gray-200);
+    border-bottom-left-radius: 6px;
     
     & strong, & b {
       font-weight: 600;
@@ -490,35 +391,35 @@ const InputContainer = styled.form`
   display: flex;
   gap: 12px;
   padding: 12px 16px;
-  background-color: #e5e5e5; // Slightly darker input area background
-  border-top: 1px solid #dcdcdc;
+  background-color: var(--color-gray-200);
+  border-top: 1px solid var(--color-gray-300);
 `;
 
 const StyledInput = styled.input`
   flex: 1;
   padding: 10px 16px;
-  border: 1px solid #c7c7cc; // Lighter border
-  border-radius: 20px; // Pill shape
+  border: 1px solid var(--color-gray-300);
+  border-radius: 20px;
   font-size: 15px;
-  background-color: #ffffff;
-  color: #1d1d1f;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   
   &:focus {
     outline: none;
-    border-color: #007aff;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
   }
 
   &::placeholder {
-    color: #8e8e93;
+    color: var(--color-text-tertiary);
   }
 `;
 
 const SendButton = styled.button`
-  background-color: #007aff;
+  background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 50%; // Circular send button
+  border-radius: 50%;
   width: 40px;
   height: 40px;
   display: flex;
@@ -529,11 +430,11 @@ const SendButton = styled.button`
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    background-color: #005ecb;
+    background-color: var(--color-primary-dark);
   }
 
   &:disabled {
-    background-color: #a0c7ff; // Lighter blue when disabled
+    background-color: var(--color-primary-light);
     cursor: not-allowed;
   }
 
@@ -542,18 +443,17 @@ const SendButton = styled.button`
   }
 `;
 
-// --- Action Buttons ---
-
+// --- Action Buttons (Adopted from Example) ---
 const ButtonContainer = styled.div`
   display: flex;
-  justify-content: space-between; // Space out buttons
+  justify-content: space-between;
   align-items: center;
   margin-top: 40px;
   padding-top: 24px;
   border-top: 1px solid var(--color-gray-200);
 `;
 
-// Reusable button styles (can replace ../common/Button if needed)
+// Use a simpler ActionButton or keep the previous versatile one
 const ActionButton = styled.button`
   display: flex;
   align-items: center;
@@ -567,43 +467,69 @@ const ActionButton = styled.button`
   transition: background-color 0.2s ease, color 0.2s ease;
 
   ${(props) => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'danger':
         return `
           background-color: transparent;
-          color: var(--color-danger); 
-          &:hover {
-            background-color: var(--color-danger-hover);
-          }
+          color: var(--color-danger);
         `;
-      case 'primary': // Example primary style
-        return `
-          background-color: var(--color-primary);
-          color: white;
-          &:hover {
-            background-color: var(--color-primary-dark);
-          }
-        `;
-      default: // Secondary / Default
+      default:
         return `
           background-color: var(--color-gray-200);
           color: var(--color-primary);
-          &:hover {
-            background-color: var(--color-gray-300);
-          }
         `;
     }
   }}
+
+  &:hover {
+    ${(props) => {
+      switch (props.$variant) {
+        case 'danger':
+          return `
+            background-color: var(--color-danger-hover);
+          `;
+        default:
+          return `
+            background-color: var(--color-gray-300);
+          `;
+      }
+    }}
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
-// --- Cook Mode Styles ---
+// Keep EditButton styling (slightly modified for consistency)
+const EditButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  margin-left: 16px; 
 
+  &:hover {
+    background-color: var(--color-gray-100);
+  }
+`;
+
+// Keep Cook Mode Styles (mostly unchanged)
 const CookModeContainer = styled.div`
   position: fixed;
   inset: 0;
   background-color: var(--color-background); 
   z-index: 1000;
-  padding: 0; // No padding on container
+  padding: 0;
   display: flex;
   flex-direction: column;
 `;
@@ -644,10 +570,10 @@ const CookModeCloseButton = styled.button`
 const CookModeStep = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 40px 30px; // More vertical padding
+  padding: 40px 30px;
   display: flex;
   flex-direction: column;
-  align-items: center; // Center content horizontally
+  align-items: center;
   text-align: center;
 `;
 
@@ -660,9 +586,9 @@ const StepNumber = styled.div`
 `;
 
 const StepContent = styled.div`
-  max-width: 650px; // Limit width for readability
+  max-width: 650px;
   width: 100%;
-  font-size: 22px; // Larger font for cooking
+  font-size: 22px; 
   line-height: 1.6;
   margin-bottom: 30px;
   color: var(--color-text);
@@ -679,8 +605,8 @@ const StepContent = styled.div`
   }
 
   ul {
-    text-align: left; // Align lists left
-    display: inline-block; // Fit content width
+    text-align: left;
+    display: inline-block;
     margin-top: 15px;
     padding-left: 25px;
     li {
@@ -697,8 +623,8 @@ const CookModeControls = styled.div`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: 650px; // Match content width
-  margin-top: auto; // Push controls to the bottom if content is short
+  max-width: 650px; 
+  margin-top: auto; 
   padding-top: 20px;
 `;
 
@@ -748,8 +674,8 @@ const CookModeToggle = styled.button`
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: #e5e5e5; // Default gray
-  color: #007aff; // Blue text and icon
+  background-color: var(--color-gray-200); 
+  color: var(--color-primary);
   border: none;
   border-radius: 10px;
   font-weight: 500;
@@ -758,7 +684,7 @@ const CookModeToggle = styled.button`
   transition: all 0.2s;
   
   &:hover {
-    background-color: #dcdcdc;
+    background-color: var(--color-gray-300);
   }
   
   svg {
@@ -766,13 +692,12 @@ const CookModeToggle = styled.button`
   }
 `;
 
-// --- Loading & Error Styles ---
-
+// --- Loading & Error Styles (Adopted from Example/Improved) ---
 const StatusContainer = styled.div`
   max-width: 600px;
   margin: 40px auto;
   padding: 40px;
-  background-color: #ffffff;
+  background-color: var(--color-background);
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   text-align: center;
@@ -780,16 +705,16 @@ const StatusContainer = styled.div`
 
 const Loading = styled.div`
   font-weight: 500;
-  color: #007aff; // Blue loading text
+  color: var(--color-primary);
   font-size: 18px;
   padding: 40px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #ff3b30; // Red error text
+  color: var(--color-danger);
   padding: 20px;
   border-radius: 12px;
-  background-color: rgba(255, 59, 48, 0.1); // Light red background
+  background-color: var(--color-danger-hover);
   margin-bottom: 24px;
   font-size: 15px;
   line-height: 1.5;
@@ -800,102 +725,50 @@ const ErrorMessage = styled.div`
 const RecipeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getRecipeById, deleteRecipe, updateRecipe, error: recipesError } = useRecipes();
+  const { getRecipeById, deleteRecipe, error: recipesError } = useRecipes();
+  const { getAssistance, isLoading: assistantLoading } = useAIService();
+  
   const [recipe, setRecipe] = useState(null);
   const [localError, setLocalError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
-  const attemptRef = useRef(0);
-  const MAX_ATTEMPTS = 1; 
+  const [isEditing, setIsEditing] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [isImageUpdating, setIsImageUpdating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   
   const [messages, setMessages] = useState([
     { id: 1, text: 'Hallo! Ich bin dein Kochassistent. Stelle mir Fragen zu diesem Rezept.', isUser: false }
   ]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
-  const { getAssistance, isLoading: assistantLoading } = useAIService();
-
+  
   const [isCookMode, setIsCookMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   
-  const processRecipeData = useCallback((recipeData) => {
-    if (!recipeData) return null;
-    const processed = { ...recipeData };
-    if (processed.isAIGenerated && processed.difficulty === 'hard') {
-      if (!processed.notes && processed.description) {
-        const notesMatch = processed.description.match(/Wichtige Hinweise:([\s\S]+?)(?=\n\n|$)/i);
-        if (notesMatch && notesMatch[1]) {
-          processed.notes = notesMatch[1].trim().split('\n').filter(note => note.trim().length > 0);
-        }
-      }
-      if (!processed.nutrition) processed.nutrition = {};
-      if (!processed.nutrition.calories && processed.description) {
-        const nutritionMatch = processed.description.match(/Nährwertangaben:[^:]*(?:Kalorien|kcal)[^:]*?(\d+)[^:]*?(?:kcal|kalorien)/i);
-        if (nutritionMatch?.[1]) processed.nutrition.calories = nutritionMatch[1].trim();
-        const proteinMatch = processed.description.match(/(?:Protein|Eiweiß)[^:]*?(\d+)[^:]*?g/i);
-        if (proteinMatch?.[1]) processed.nutrition.protein = proteinMatch[1].trim();
-        const carbsMatch = processed.description.match(/(?:Kohlenhydrate|Carbs)[^:]*?(\d+)[^:]*?g/i);
-        if (carbsMatch?.[1]) processed.nutrition.carbs = carbsMatch[1].trim();
-        const fatMatch = processed.description.match(/(?:Fett)[^:]*?(\d+)[^:]*?g/i);
-        if (fatMatch?.[1]) processed.nutrition.fat = fatMatch[1].trim();
-      }
-      if (processed.steps?.length > 0) {
-        processed.steps = processed.steps.map(step => {
-          if (step.trim().match(/^[^:]+:$/) && processed.description) {
-            const stepTitle = step.trim();
-            const stepRegex = new RegExp(`${stepTitle}\\s*([^:]+?)(?=\\d+\\.\\s|$)`, 'i');
-            const match = processed.description.match(stepRegex);
-            if (match?.[1]) return `${stepTitle} ${match[1].trim()}`;
-          }
-          return step;
-        });
-      }
-      if (!processed.tips && processed.description) {
-        const tipsMatch = processed.description.match(/(?:Wichtige Hinweise|Tipps):([\s\S]+?)(?=\n\n|$)/i);
-        if (tipsMatch?.[1]) {
-          processed.tips = tipsMatch[1].trim().split(/\n\s*\n/).map(tip => tip.trim()).filter(tip => tip.length > 0);
-        }
-      }
-    }
-    return processed;
-  }, []);
-
   const fetchRecipe = useCallback(async () => {
     if (!id) {
       setLocalError('Keine Rezept-ID gefunden');
       setIsLoading(false);
       return;
     }
-    if (attemptRef.current >= MAX_ATTEMPTS) return;
     
     try {
       setIsLoading(true);
       setLocalError(null);
-      setHasAttemptedFetch(true);
-      attemptRef.current += 1;
       const data = await getRecipeById(id);
-      const processedData = processRecipeData(data);
-      setRecipe(processedData);
+      setRecipe(data);
     } catch (err) {
       console.error('Fehler beim Laden des Rezepts:', err);
-      setLocalError(err.message || 'Das Rezept konnte nicht geladen werden.');
+      setLocalError(err.response?.data?.message || err.message || 'Das Rezept konnte nicht geladen werden.');
     } finally {
       setIsLoading(false);
     }
-  }, [id, getRecipeById, processRecipeData]);
+  }, [id, getRecipeById]);
 
   useEffect(() => {
-    let isMounted = true;
-    let timeoutId = null;
-    const loadRecipe = async () => {
-      if (isMounted && !hasAttemptedFetch) await fetchRecipe();
-    };
-    timeoutId = setTimeout(loadRecipe, 100);
-    return () => { isMounted = false; if (timeoutId) clearTimeout(timeoutId); };
-  }, [fetchRecipe, hasAttemptedFetch]);
+    console.log('RecipeDetail: Fetch effect running, dependencies:', { id });
+    fetchRecipe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, getRecipeById]);
 
   const handleDelete = async () => {
     if (window.confirm('Möchtest du dieses Rezept wirklich löschen?')) {
@@ -905,15 +778,13 @@ const RecipeDetail = () => {
         navigate('/recipes');
       } catch (err) {
         console.error('Fehler beim Löschen des Rezepts:', err);
-        setLocalError(err.message || 'Fehler beim Löschen des Rezepts');
+        setLocalError(err.response?.data?.message || err.message || 'Fehler beim Löschen des Rezepts');
         setIsLoading(false);
       }
     }
   };
 
   const handleRetry = () => {
-    attemptRef.current = 0;
-    setHasAttemptedFetch(false);
     setLocalError(null);
     fetchRecipe();
   };
@@ -929,52 +800,34 @@ const RecipeDetail = () => {
 
   const formatStepText = (text) => {
     if (!text) return '';
-    let formattedText = text;
-    const hasHeadline = /^([^:]+:)(.+)/.exec(text);
+    // Check for bold title format: **Title:** Description
+    const hasHeadline = /^\*\*([^:]+):\*\*(.*)$/s.exec(text); // Use . to match newline, capture everything after :
     if (hasHeadline) {
       const [, title, description] = hasHeadline;
-      return `<div class="step-title">${title.trim()}</div><div class="step-description">${description.trim()}</div>`;
+      // Sanitize title 
+      const safeTitle = title.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      
+      // Trim description, remove potential leading ** and whitespace, then sanitize and process markdown
+      const cleanedDescription = description.trim().replace(/^\*\*/, '').trim(); // Remove leading ** if present
+      const safeDescription = cleanedDescription
+          .replace(/</g, "&lt;").replace(/>/g, "&gt;") // Basic sanitization
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); // Convert internal **bold**
+          
+      // Wrap the extracted title in strong tags
+      return `<div class="step-title"><strong>${safeTitle.trim()}</strong></div><div class="step-description">${safeDescription}</div>`; // Use safeDescription directly (already trimmed)
     }
-    formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    if (formattedText.trim().startsWith('*')) {
-      let lines = formattedText.split('\n');
-      let isList = false;
-      let listContent = '';
-      lines = lines.map(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('*')) {
-          if (!isList) {
-            isList = true;
-            listContent = '<ul>';
-          }
-          const listItemText = trimmedLine.substring(1).trim();
-          listContent += `<li>${listItemText}</li>`;
-          return null;
-        } else {
-          if (isList) {
-            isList = false;
-            listContent += '</ul>';
-            const currentList = listContent;
-            listContent = ''; // Reset for potential next list
-            return currentList + line;
-          }
-          return line;
-        }
-      }).filter(line => line !== null);
-      if (isList) listContent += '</ul>';
-      formattedText = lines.join('\n') + (isList ? listContent : ''); // Append final list if needed
-    }
-    if (!hasHeadline && !formattedText.includes('<ul>') && !formattedText.includes('<strong>')) {
-        return `<div>${formattedText}</div>`;
-    }
-    return formattedText;
+    // Sanitize plain text step AND handle potential bold markdown within it
+    const safeText = text
+        .replace(/</g, "&lt;").replace(/>/g, "&gt;") // Basic sanitization
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); // Convert **bold**
+    return `<div>${safeText}</div>`;
   };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const createRecipeContext = (currentRecipe) => {
+  const createRecipeContext = useCallback((currentRecipe) => {
     if (!currentRecipe) return '';
     let context = `Rezept: ${currentRecipe.title}\n\n`;
     if (currentRecipe.ingredients?.length > 0) {
@@ -988,45 +841,45 @@ const RecipeDetail = () => {
     if (currentRecipe.steps?.length > 0) {
       context += "Zubereitung:\n";
       currentRecipe.steps.forEach((step, index) => {
-        const cleanedStep = step.replace(/<[^>]*>/g, '');
+        const cleanedStep = step.replace(/\\*\\*([^:]+):\\*\\*\\s*/, '').replace(/<[^>]*>/g, '');
         context += `${index + 1}. ${cleanedStep}\n`;
       });
     }
-    return context;
-  };
+    return context.substring(0, 4000);
+  }, []);
 
   const formatAssistantText = (text) => {
     if (!text) return '';
     let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    let lines = formattedText.split('\n');
+    let lines = formattedText.split('\\n');
     let isList = false;
     let resultLines = [];
     let listContent = '';
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]; // Don't trim lines here, preserve indentation for potential code blocks
+      const line = lines[i];
       const trimmedLine = line.trim();
       if (trimmedLine.startsWith('*') && !trimmedLine.startsWith('**')) {
         if (!isList) {
           isList = true;
           listContent = '<ul>';
         }
-        const listItemText = trimmedLine.substring(1).trim();
+        const listItemText = trimmedLine.substring(1).trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
         listContent += `<li>${listItemText}</li>`;
       } else {
         if (isList) {
           isList = false;
           listContent += '</ul>';
           resultLines.push(listContent);
-          listContent = ''; // Reset
+          listContent = '';
         }
-        resultLines.push(line);
+        resultLines.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
       }
     }
     if (isList) {
       listContent += '</ul>';
       resultLines.push(listContent);
     }
-    return resultLines.join('\n');
+    return resultLines.join('<br />');
   };
 
   const handleSendMessage = async (e) => {
@@ -1069,32 +922,31 @@ const RecipeDetail = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
-      // Get the token from localStorage with the correct key 'token'
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${apiUrl}/recipes/${id}/image`, {
           method: 'POST',
           body: formData,
-          credentials: 'include',
           headers: {
-            // Include authorization header if token exists
             ...(token && { 'Authorization': `Bearer ${token}` })
           }
       });
 
       if (!response.ok) {
-          const errorData = await response.text();
-          // Don't use Error constructor, just set the error message directly
-          throw `Upload fehlgeschlagen: ${response.status} ${errorData}`;
+          let errorData = 'Upload fehlgeschlagen';
+          try {
+              errorData = await response.text();
+          } catch (e) { /* ignore */ }
+          throw new Error(`${errorData} (${response.status})`);
       }
 
       const updatedData = await response.json();
-      setRecipe(processRecipeData(updatedData));
+      setRecipe(updatedData); 
       setImageFile(null);
+      setIsEditing(false);
     } catch (err) {
       console.error('Fehler beim Hochladen des Bildes:', err);
-      setLocalError(typeof err === 'string' ? err : 'Fehler beim Hochladen des Bildes');
+      setLocalError(err.message || 'Fehler beim Hochladen des Bildes');
     } finally {
       setIsImageUpdating(false);
     }
@@ -1104,7 +956,7 @@ const RecipeDetail = () => {
     setIsEditing(!isEditing);
     if (isEditing) {
       setImageFile(null); 
-      setLocalError(null); // Clear errors when cancelling edit
+      setLocalError(null);
     }
   };
 
@@ -1135,14 +987,13 @@ const RecipeDetail = () => {
     );
   }
 
-  const displayError = localError || recipesError;
-  if (displayError) {
+  if (localError || recipesError) {
     return (
       <PageContainer>
         <StatusContainer>
-          <ErrorMessage>{displayError}</ErrorMessage>
-          <ButtonContainer style={{ borderTop: 'none', marginTop: 0 }}>
-            <ActionButton onClick={handleRetry} variant="primary">
+          <ErrorMessage>{localError || recipesError}</ErrorMessage>
+          <ButtonContainer style={{ borderTop: 'none', marginTop: 0, justifyContent: 'space-around' }}>
+            <ActionButton onClick={handleRetry}>
               Erneut versuchen
             </ActionButton>
             <ActionButton onClick={() => navigate('/recipes')} >
@@ -1169,7 +1020,7 @@ const RecipeDetail = () => {
     );
   }
 
-  if (isCookMode && recipe?.steps) {
+  if (isCookMode && recipe?.steps?.length > 0) {
     return (
       <CookModeContainer>
         <CookModeHeader>
@@ -1208,63 +1059,58 @@ const RecipeDetail = () => {
           <HeaderTopRow>
             <RecipeTitle>{recipe.title}</RecipeTitle>
             <EditButton onClick={toggleEditMode}> 
-              <FaEdit /> {isEditing ? 'Abbrechen' : 'Bearbeiten'}
+              <FaEdit /> {isEditing ? 'Abbrechen' : 'Bild ändern'}
             </EditButton>
           </HeaderTopRow>
           
-          {(!isEditing || (recipe.image && recipe.image.data)) && ( 
-            <RecipeImageWrapper>
-               {recipe.image && recipe.image.data ? (
-                 <img 
-                   src={`data:${recipe.image.contentType};base64,${recipe.image.data}`} 
-                   alt={recipe.title} 
-                 />
-               ) : (
-                 <div style={{ /* Optional: Style for placeholder */ }}></div>
-               )} 
-            </RecipeImageWrapper>
-          )}
-          
-          {isEditing && (
+          {isEditing ? (
             <ImageSection>
               <h3>Rezeptbild ändern</h3>
               <ImageUpload 
-                label="Neues Bild hochladen" 
+                label="Neues Bild hochladen oder hierher ziehen" 
                 onChange={handleImageChange}
                 currentImage={recipe.image?.data ? `data:${recipe.image.contentType};base64,${recipe.image.data}` : null}
               />
-              
               {imageFile && (
-                <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <ActionButton 
                     onClick={handleImageUpload}
                     disabled={isImageUpdating}
-                    variant="primary"
+                    style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
                   >
                     {isImageUpdating ? 'Wird hochgeladen...' : 'Bild speichern'}
                   </ActionButton>
                    <ActionButton 
-                    onClick={() => setImageFile(null)} // Clear selection
+                    onClick={() => setImageFile(null)} 
                   >
                     Auswahl aufheben
                   </ActionButton>
                 </div>
               )}
-              
-              {localError && imageFile && ( // Show upload error only when relevant
+              {localError && imageFile && ( 
                 <ErrorMessage style={{ marginTop: '16px' }}>
                   {localError}
                 </ErrorMessage>
               )}
             </ImageSection>
+          ) : (
+            <RecipeImageWrapper>
+              {recipe.image && recipe.image.data ? (
+                <img 
+                  src={`data:${recipe.image.contentType};base64,${recipe.image.data}`} 
+                  alt={recipe.title} 
+                />
+              ) : (
+                <span>{recipe.emoji || '🍽️'}</span> 
+              )} 
+            </RecipeImageWrapper>
           )}
           
           <TagsContainer>
-            {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}
-            {recipe.dietaryRestrictions?.map((diet, index) => (
-              <Tag key={index}>{diet}</Tag>
+            {recipe.tags && recipe.tags.map((tag, index) => (
+              <Tag key={index}>{tag}</Tag>
             ))}
-            {recipe.cuisine && <Tag>{recipe.cuisine}</Tag>}
+            {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}
           </TagsContainer>
           
           <RecipeMeta>
@@ -1287,10 +1133,10 @@ const RecipeDetail = () => {
           </RecipeMeta>
         </RecipeHeader>
         
-        {recipe.isAIGenerated && recipe.description && (
+        {recipe.description && (
           <Section>
-            <div style={{ fontSize: '16px', lineHeight: '1.6', color: '#3c3c43' }}>
-              {recipe.description.split('\n\n').map((para, index) => <p key={index}>{para}</p>)}
+            <div style={{ fontSize: '16px', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
+              {recipe.description.split('\\n\\n').map((para, index) => <p key={index}>{para}</p>)}
             </div>
           </Section>
         )}
@@ -1307,27 +1153,12 @@ const RecipeDetail = () => {
                       <span>{ingredient.name}</span>
                     </>
                   ) : (
-                    <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span>
+                    <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span> 
                   )}
                 </Ingredient>
               ))}
             </IngredientList>
           </Section>
-        )}
-
-        {recipe.notes && recipe.notes.length > 0 && (
-           <NotesSection style={{ backgroundColor: '#f0f7ff', borderColor: '#d6eaff' }}>
-            <h4>Zubereitungshinweise</h4>
-            <ul>
-              {Array.isArray(recipe.notes) ? (
-                recipe.notes.map((note, index) => (
-                  <li key={index}>{note}</li>
-                ))
-              ) : (
-                <li>{recipe.notes}</li> 
-              )}
-            </ul>
-          </NotesSection>
         )}
         
         {recipe.steps && recipe.steps.length > 0 && (
@@ -1341,14 +1172,14 @@ const RecipeDetail = () => {
             <StepsList>
               {recipe.steps.map((step, index) => (
                 <Step key={index}>
-                    <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
+                  <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
                 </Step>
               ))}
             </StepsList>
           </Section>
         )}
         
-        {recipe.nutrition && Object.keys(recipe.nutrition).length > 0 && ( 
+        {recipe.nutrition && (recipe.nutrition.calories || recipe.nutrition.protein || recipe.nutrition.carbs || recipe.nutrition.fat) && ( 
           <Section>
             <SectionTitle>Nährwerte (ca. pro Portion)</SectionTitle>
             <NutritionSection>
@@ -1378,49 +1209,20 @@ const RecipeDetail = () => {
                   </NutritionItem>
                 )}
               </NutritionGrid>
-              
-              {recipe.nutrition.additionalNutrients && Object.keys(recipe.nutrition.additionalNutrients).length > 0 && (
-                <NutritionDetail>
-                  {Object.entries(recipe.nutrition.additionalNutrients).map(([key, value], index) => (
-                    <AdditionalNutrientItem key={index}>
-                      <span>{key}</span>
-                      <span>{value}</span>
-                    </AdditionalNutrientItem>
-                  ))}
-                </NutritionDetail>
-              )}
-              
-              {recipe.nutrition.notes && (
-                <NotesSection style={{ marginTop: '20px', background: 'transparent', border: 'none', padding: 0 }}>
-                  <p>{recipe.nutrition.notes}</p>
-                </NotesSection>
-              )}
             </NutritionSection>
           </Section>
         )}
-        
-        {recipe.difficulty === 'hard' && recipe.tips && recipe.tips.length > 0 && (
+
+        {recipe.tips && recipe.tips.length > 0 && (
           <Section>
-            <SectionTitle>Wichtige Hinweise & Tipps</SectionTitle>
-             <NotesSection style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}>
+             <SectionTitle>Tipps</SectionTitle>
+             <NotesSection>
               <ul>
                 {recipe.tips.map((tip, index) => (
                   <li key={index}>{tip}</li>
                 ))}
               </ul>
             </NotesSection>
-          </Section>
-        )}
-        
-        {recipe.difficulty === 'hard' && (
-          <Section>
-             <WarningSection>
-                <div className="icon">!</div>
-                <div className="text">
-                  <h4>Anspruchsvolles Rezept</h4>
-                  <p>Dieses Rezept erfordert fortgeschrittene Kochtechniken und Erfahrung. Bitte lesen Sie alle Schritte vor dem Beginn sorgfältig durch.</p>
-                </div>
-             </WarningSection>
           </Section>
         )}
         
@@ -1432,7 +1234,7 @@ const RecipeDetail = () => {
             <ChatContainer>
               <MessagesContainer>
                 {messages.map(message => (
-                  <MessageBubble key={message.id} isUser={message.isUser}>
+                  <MessageBubble key={message.id} $isUser={message.isUser}>
                     {message.isUser ? 
                       message.text : 
                       <div dangerouslySetInnerHTML={{ __html: formatAssistantText(message.text) }} />
@@ -1440,7 +1242,7 @@ const RecipeDetail = () => {
                   </MessageBubble>
                 ))}
                 {assistantLoading && (
-                   <MessageBubble isUser={false}>
+                   <MessageBubble $isUser={false}>
                       <i>Schreibt...</i>
                    </MessageBubble>
                 )}
@@ -1473,7 +1275,7 @@ const RecipeDetail = () => {
           </ActionButton>
           <ActionButton 
             onClick={handleDelete}
-            variant="danger"
+            $variant="danger"
             disabled={isLoading}
           >
             <FaTrash /> Rezept löschen

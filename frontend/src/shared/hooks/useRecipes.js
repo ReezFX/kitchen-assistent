@@ -29,7 +29,7 @@ export const useRecipes = () => {
   }, [fetchRecipes]);
 
   // Get a recipe by ID
-  const getRecipeById = async (id) => {
+  const getRecipeById = useCallback(async (id) => {
     setLoading(true);
     setError(null);
     
@@ -44,7 +44,7 @@ export const useRecipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Create a new recipe
   const createRecipe = async (recipeData) => {
@@ -65,7 +65,7 @@ export const useRecipes = () => {
   };
 
   // Update a recipe
-  const updateRecipe = async (id, recipeData) => {
+  const updateRecipe = useCallback(async (id, recipeData) => {
     setLoading(true);
     setError(null);
     
@@ -85,10 +85,10 @@ export const useRecipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [recipes, currentRecipe]);
 
   // Delete a recipe
-  const deleteRecipe = async (id) => {
+  const deleteRecipe = useCallback(async (id) => {
     setLoading(true);
     setError(null);
     
@@ -106,7 +106,7 @@ export const useRecipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [recipes, currentRecipe]);
 
   return {
     recipes,

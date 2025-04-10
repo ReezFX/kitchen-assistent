@@ -78,7 +78,7 @@ const StyledButton = styled.button`
     }
   }}
   
-  ${({ fullWidth }) => fullWidth && `
+  ${({ $fullWidth }) => $fullWidth && `
     width: 100%;
   `}
 `;
@@ -86,7 +86,7 @@ const StyledButton = styled.button`
 const Button = ({ 
   children, 
   variant = 'primary', 
-  fullWidth = false, 
+  $fullWidth = false, 
   type = 'button',
   ...rest 
 }) => {
@@ -94,7 +94,7 @@ const Button = ({
     <StyledButton
       type={type}
       variant={variant}
-      fullWidth={fullWidth}
+      $fullWidth={$fullWidth}
       {...rest}
     >
       {children}

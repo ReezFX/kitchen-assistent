@@ -8,7 +8,7 @@ const cacheService = new CacheService();
 
 exports.generateRecipe = async (req, res) => {
   try {
-    const { ingredients, preferences } = req.body;
+    const { ingredients, preferences, systemPrompt } = req.body;
     
     // Input validation
     if (!ingredients || ingredients.length === 0) {
@@ -16,11 +16,11 @@ exports.generateRecipe = async (req, res) => {
     }
     
     // Create a cache key based on the request
-    const cacheKey = `recipe:${ingredients.sort().join(',')}:${JSON.stringify(preferences)}`;
+    const cacheKey = `recipe:${ingredients.sort().join(',')}:${JSON.stringify(preferences)}:${systemPrompt ? 'custom' : 'default'}`;
     
     // Use cached AI request
     const recipeText = await cacheService.cachedAIRequest(cacheKey, () => {
-      return aiService.generateRecipe(ingredients, preferences);
+      return aiService.generateRecipe(ingredients, preferences, systemPrompt);
     });
     
     // Parse the recipe (simple version for now)

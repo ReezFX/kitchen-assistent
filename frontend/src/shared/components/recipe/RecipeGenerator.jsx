@@ -4,12 +4,31 @@ import styled from 'styled-components';
 import { useAIService } from '../../hooks/useAIService';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useAuth } from '../../hooks/useAuth';
+import { FaUtensils, FaClock } from 'react-icons/fa';
 
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import IngredientSelector from './IngredientSelector';
 import ImageUpload from '../common/ImageUpload';
+
+// --- Base Styles inspired by Apple Design ---
+const PageContainer = styled.div`
+  background-color: var(--color-background-light);
+  min-height: 100vh;
+  padding: 20px;
+`;
+
+const ContentWrapper = styled.div`
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background-color: var(--color-background);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+`;
 
 const Form = styled.form`
   display: flex;
@@ -44,18 +63,253 @@ const Error = styled.div`
   margin-bottom: 16px;
 `;
 
+// Define options for dropdowns
+const dietOptions = [
+  { value: '', label: 'Keine Angabe' },
+  { value: 'Vegetarisch', label: 'Vegetarisch' },
+  { value: 'Vegan', label: 'Vegan' },
+  { value: 'Glutenfrei', label: 'Glutenfrei' },
+  { value: 'Laktosefrei', label: 'Laktosefrei' },
+  { value: 'Keto', label: 'Keto' },
+  { value: 'Low Carb', label: 'Low Carb' },
+  { value: 'Pescetarisch', label: 'Pescetarisch' },
+];
+
+const cuisineOptions = [
+  { value: '', label: 'Keine Angabe' },
+  { value: 'Deutsch', label: 'Deutsch' },
+  { value: 'Italienisch', label: 'Italienisch' },
+  { value: 'Asiatisch', label: 'Asiatisch' },
+  { value: 'Mexikanisch', label: 'Mexikanisch' },
+  { value: 'Indisch', label: 'Indisch' },
+  { value: 'Mediterran', label: 'Mediterran' },
+  { value: 'Orientalisch', label: 'Orientalisch' },
+  { value: 'Französisch', label: 'Französisch' },
+];
+
+// --- Recipe Display Styles ---
+
 const RecipeDisplay = styled.div`
   margin-top: 24px;
-  padding: 20px;
-  background-color: var(--color-gray-50);
-  border-radius: 8px;
+  background-color: var(--color-background);
+  border-radius: 16px;
   border: 1px solid var(--color-gray-200);
 `;
 
-const RecipeTitle = styled.h3`
-  font-size: 22px;
+const RecipeHeader = styled.header`
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-gray-200);
+`;
+
+const HeaderTopRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+`;
+
+const RecipeTitle = styled.h1`
+  font-size: 34px;
+  font-weight: 700;
   color: var(--color-text-primary);
-  margin-bottom: 16px;
+  line-height: 1.2;
+  margin: 0;
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+`;
+
+const Tag = styled.span`
+  display: inline-block;
+  background-color: var(--color-gray-200);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 16px;
+`;
+
+const RecipeMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+`;
+
+const MetaItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  span {
+    color: var(--color-text-secondary);
+  }
+  
+  strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+`;
+
+// --- Section Styles ---
+const Section = styled.section`
+  margin-bottom: 40px;
+  padding: 0 20px;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-gray-200);
+`;
+
+// --- Ingredient Styles ---
+const IngredientList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+`;
+
+const Ingredient = styled.li`
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px;
+  background-color: var(--color-gray-100);
+  border-radius: 10px;
+  font-size: 15px;
+  
+  strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    min-width: 70px;
+    text-align: right;
+  }
+  
+  span {
+    color: var(--color-text-secondary);
+    flex-grow: 1;
+  }
+`;
+
+// --- Steps Styles ---
+const StepsList = styled.ol`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: steps;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const Step = styled.li`
+  counter-increment: steps;
+  display: flex;
+  gap: 16px;
+  background-color: var(--color-background);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  position: relative;
+  line-height: 1.6;
+
+  &::before {
+    content: counter(steps);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    background-color: var(--color-gray-100);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-content {
+    flex-grow: 1;
+  }
+
+  .step-title {
+    font-weight: 600;
+    font-size: 17px;
+    margin-bottom: 8px;
+    color: var(--color-text-primary);
+  }
+  
+  .step-description,
+  & > div:not(.step-title):not(.step-description) {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+  }
+  
+  ul {
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding-left: 20px;
+    list-style-type: disc;
+    li {
+      margin-bottom: 6px;
+    }
+  }
+
+  strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+`;
+
+// --- Nutrition Styles ---
+const NutritionSection = styled.div`
+  background-color: var(--color-gray-100);
+  border-radius: 12px;
+  padding: 20px;
+`;
+
+const NutritionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+`;
+
+const NutritionItem = styled.div`
+  padding: 16px;
+  background-color: var(--color-background);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  
+  span:first-child {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  span:last-child {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
 `;
 
 const ExtractedTitle = styled.div`
@@ -72,9 +326,26 @@ const ExtractedTitle = styled.div`
 const RecipeContent = styled.div`
   white-space: pre-wrap;
   line-height: 1.6;
+  padding: 20px;
   
   strong {
     font-weight: 600;
+  }
+`;
+
+const RecipeImageWrapper = styled.div`
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 16 / 9;
+  background-color: var(--color-gray-100);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 `;
 
@@ -82,6 +353,8 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   margin-top: 20px;
+  padding: 20px;
+  border-top: 1px solid var(--color-gray-200);
 `;
 
 const SuccessMessage = styled.div`
@@ -107,7 +380,9 @@ const RecipeGenerator = () => {
   const [preferences, setPreferences] = useState({
     diet: '',
     cuisine: '',
-    difficulty: 'medium'
+    difficulty: 'medium',
+    prepTime: '',
+    cookTime: '',
   });
   const [recipe, setRecipe] = useState(null);
   const [success, setSuccess] = useState('');
@@ -132,30 +407,45 @@ const RecipeGenerator = () => {
     setSuccess('');
     
     try {
-      const generatedRecipe = await generateRecipe(ingredients, preferences);
-      
-      // Check if the response might be truncated
-      if (generatedRecipe && generatedRecipe.text) {
-        // Check for potential truncation signs
-        const text = generatedRecipe.text;
-        const lastChar = text.charAt(text.length - 1);
-        const lastFewChars = text.substring(text.length - 5);
-        
-        // If the text ends abruptly with a number followed by a dot, or with a colon, or with markdown
-        const seemsTruncated = (
-          /\d+\.\s*$/.test(lastFewChars) || // Ends with a number followed by a dot
-          lastChar === ':' ||              // Ends with a colon
-          lastFewChars.includes('**') ||   // Ends with markdown
-          (text.match(/\*\*/g) || []).length % 2 !== 0 // Uneven number of ** (unclosed bold)
-        );
-        
-        if (seemsTruncated) {
-          console.warn('Möglicherweise unvollständige API-Antwort erkannt:', lastFewChars);
-          // Append a note for the user
-          generatedRecipe.text += '\n\n[Hinweis: Es könnte sein, dass nicht der gesamte Text angezeigt wird. Bitte passen Sie die Komplexität an oder versuchen Sie es erneut mit weniger Zutaten.]';
-        }
-      }
-      
+      // Create custom system prompt to guide the AI
+      const systemPrompt = `
+Du bist ein professioneller Koch-Assistent. Erstelle ein detailliertes Rezept basierend auf den bereitgestellten Zutaten und Präferenzen. 
+Formatiere das Rezept wie folgt:
+
+# Titel: [Rezeptname]
+
+**Tags:** [Tag1], [Tag2], [Tag3 (inklusive der angegebenen Ernährungsform und Küchenstil)]
+
+**Schwierigkeit:** ${preferences.difficulty || 'medium'}
+**Zubereitungszeit:** ${preferences.prepTime || '15'} Minuten
+**Kochzeit:** ${preferences.cookTime || '20'} Minuten
+
+## Beschreibung
+[2-3 Sätze, die das Gericht beschreiben]
+
+## Zutaten
+- [Menge] [Einheit] [Zutat 1]
+- [Menge] [Einheit] [Zutat 2]
+...
+
+## Zubereitung
+1. [Erster Schritt mit detaillierter Anleitung]
+2. [Zweiter Schritt mit detaillierter Anleitung]
+...
+
+## Nährwerte (pro Portion)
+- Kalorien: [Wert] kcal
+- Protein: [Wert] g
+- Kohlenhydrate: [Wert] g
+- Fett: [Wert] g
+
+## Tipps
+- [Tipp 1]
+- [Tipp 2]
+
+Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklärt werden, bei Bedarf mit Temperaturangaben und Zeitangaben. Achte darauf, dass alle angegebenen Zutaten im Rezept verwendet werden.`;
+
+      const generatedRecipe = await generateRecipe(ingredients, preferences, systemPrompt);
       setRecipe(generatedRecipe);
     } catch (error) {
       console.error('Fehler bei der Rezeptgenerierung:', error);
@@ -171,383 +461,8 @@ const RecipeGenerator = () => {
     setSuccess('');
     
     try {
-      // Parse title from recipe text
-      const lines = recipe.text.split('\n');
-      
-      // Default to first line
-      let title = lines[0].trim();
-      let foundExactTitle = false;
-      
-      console.log("Extrahiere Titel aus:", lines.slice(0, 20));
-      
-      // Helper function to clean title from markdown stars
-      const cleanTitle = (title) => {
-        if (!title) return '';
-        
-        // Remove markdown formatting stars at beginning or end
-        let cleanedTitle = title.replace(/^\*\*/, '').replace(/\*\*$/, '');
-        
-        // Remove any remaining markdown formatting (bold, italic, etc)
-        cleanedTitle = cleanedTitle.replace(/\*\*/g, '').replace(/\*/g, '');
-        
-        // Remove backticks (code formatting)
-        cleanedTitle = cleanedTitle.replace(/`/g, '');
-        
-        // Remove any leading/trailing whitespace
-        cleanedTitle = cleanedTitle.trim();
-        
-        return cleanedTitle;
-      };
-      
-      // First pass: Look EXACTLY for "Titel:" in any case (HIGHEST PRIORITY)
-      let titleFound = false;
-      for (let i = 0; i < 40 && i < lines.length; i++) {
-        const line = lines[i].trim();
-        console.log(`Prüfe Zeile ${i} auf Titel: "${line}"`);
-        
-        // Check for exact "Titel:" pattern with different capitalizations and formats
-        if (line.toLowerCase().startsWith('titel:') || line.match(/^titel\s*:/i)) {
-          // Extract everything after the colon
-          let titlePart = '';
-          const colonIndex = line.indexOf(':');
-          if (colonIndex !== -1 && colonIndex < line.length - 1) {
-            titlePart = line.substring(colonIndex + 1).trim();
-            if (titlePart) {
-              console.log(`!!! TITEL GEFUNDEN !!! in Zeile ${i}: "${line}" -> Extrahiert: "${titlePart}"`);
-              title = cleanTitle(titlePart);
-              titleFound = true;
-              foundExactTitle = true;
-              break;
-            }
-          }
-        }
-      }
-      
-      // TITEL HIGHER PRIORITY: If we still haven't found a title, check for "Titel:" anywhere in the first 50 lines
-      if (!titleFound) {
-        const titleLine = lines.slice(0, 50).find(line => 
-          line.toLowerCase().includes('titel:') && !line.toLowerCase().includes('untertitel:')
-        );
-        
-        if (titleLine) {
-          const colonIndex = titleLine.toLowerCase().indexOf('titel:') + 6;
-          if (colonIndex < titleLine.length) {
-            const titlePart = titleLine.substring(colonIndex).trim();
-            if (titlePart) {
-              console.log(`!!! TITEL DURCH INCLUDES GEFUNDEN !!! "${titleLine}" -> Extrahiert: "${titlePart}"`);
-              title = cleanTitle(titlePart);
-              titleFound = true;
-              foundExactTitle = true;
-            }
-          }
-        }
-      }
-      
-      // Second pass: If we didn't find a title with "Titel:", look for the real recipe title
-      if (!foundExactTitle) {
-        console.log("Kein expliziter Titel gefunden, suche nach alternativem Titel...");
-        // If current title is likely a greeting or introduction
-        if (title.toLowerCase().includes('hier ist') || 
-            title.toLowerCase().includes('absolut') ||
-            title.startsWith('Ein ') ||
-            title.includes('!')) {
-          
-          // Look for a line that looks like a title
-          for (let i = 1; i < 20 && i < lines.length; i++) {
-            const line = lines[i].trim();
-            
-            // Skip empty lines and long lines
-            if (!line || line.length > 80 || line.length < 4) continue;
-            
-            // Skip lines that are part of other sections
-            if (line.toLowerCase().includes('zutaten') ||
-                line.toLowerCase().includes('beschreibung') ||
-                line.toLowerCase().includes('anleitung') ||
-                line.toLowerCase().includes('schritte') ||
-                line.includes(':')) continue;
-                
-            // If it looks like a title (not too long, not too short, not ALL CAPS)
-            if (line !== line.toUpperCase() && 
-                !line.includes('!') && 
-                !line.includes('?')) {
-              console.log(`Möglicher Titel gefunden: "${line}"`);
-              title = cleanTitle(line);  // <- Clean the title
-              break;
-            }
-          }
-        }
-      }
-      
-      // Third pass: look specifically for patterns that commonly indicate recipe titles
-      if (!foundExactTitle && (title.toLowerCase().includes('hier ist') || title.includes('!'))) {
-        console.log("Suche nach speziellen Titelmustern...");
-        
-        // Look for lines that match typical recipe title patterns
-        for (let i = 0; i < 30 && i < lines.length; i++) {
-          const line = lines[i].trim();
-          
-          // Skip empty lines
-          if (!line) continue;
-          
-          // Pattern 1: Title often appears right after "Hier ist ein Rezept..." or similar introductions
-          if (i > 0) {
-            const prevLine = lines[i-1].trim().toLowerCase();
-            if ((prevLine.includes('hier ist') || prevLine.includes('rezept')) && 
-                line.length > 5 && line.length < 70 && 
-                !line.includes(':') && !line.toLowerCase().includes('zutaten')) {
-              console.log(`Titelmuster 1 gefunden: "${line}"`);
-              title = cleanTitle(line);  // <- Clean the title
-              foundExactTitle = true;
-              break;
-            }
-          }
-          
-          // Pattern 2: Title is often a short, standalone line that's capitalized and contains specific keywords
-          const titleKeywords = ['keto', 'salat', 'suppe', 'auflauf', 'brot', 'kuchen', 'pfanne', 'toast', 'hähnchen', 'vegetarisch'];
-          const containsTitleKeyword = titleKeywords.some(keyword => 
-            line.toLowerCase().includes(keyword)
-          );
-          
-          if (containsTitleKeyword && 
-              line.length > 8 && line.length < 70 && 
-              !line.includes(':') && 
-              line !== line.toLowerCase() && // Some capitalization
-              !line.toLowerCase().includes('zutaten') &&
-              !line.toLowerCase().includes('schritte')) {
-            console.log(`Titelmuster 2 gefunden: "${line}"`);
-            title = cleanTitle(line);  // <- Clean the title
-            foundExactTitle = true;
-            break;
-          }
-        }
-      }
-      
-      // Final title safety check - make sure we don't have an ingredient or other problematic text as title
-      if (!foundExactTitle) {
-        // If title starts with a star or is a measurement, it's probably not a title
-        if (title.startsWith('*') || 
-            /^\d+\s+[gmltLkgELTesps]+/.test(title) || // Measurement pattern with units
-            /^\d+x/.test(title) || // Measurement pattern like "2x..."
-            title.toLowerCase().includes('zutaten:') ||
-            title.toLowerCase().includes('beschreibung:')) {
-          console.log(`Problematischer Titel erkannt, setze Standard-Titel: "${title}"`);
-          title = "Keto-Rezept";  // Default title as fallback
-        } else {
-          console.log(`Titel scheint in Ordnung zu sein: "${title}"`);
-        }
-      }
-      
-      console.log(`Finaler Titel nach allen Prüfungen: "${title}"`);
-
-      // Final cleaning of the title - ensure all markdown is removed
-      title = cleanTitle(title);
-      console.log(`Finaler Titel nach Bereinigung: "${title}"`);
-      
-      // Parse ingredients from recipe text
-      let extractedIngredients = [];
-      let inIngredients = false;
-      let inSteps = false;
-      let steps = [];
-      
-      // Iterate through all lines to extract ingredients and steps
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        if (line === '') continue;
-        
-        // Check for section headers
-        const lineLC = line.toLowerCase();
-        
-        // Debug log for section detection
-        console.log(`Zeile ${i}: "${line}" - inIngredients: ${inIngredients}, inSteps: ${inSteps}`);
-        
-        // More robust ingredients section detection
-        if (lineLC.includes('zutaten:') || 
-            line === 'Zutaten' || 
-            lineLC === 'zutaten' ||
-            lineLC.startsWith('zutaten für') ||
-            (lineLC === 'zutaten' && lines[i+1] && lines[i+1].includes(':')) ||
-            lineLC.includes('benötigte zutaten')) {
-          console.log(`Zutaten-Abschnitt gefunden in Zeile ${i}: "${line}"`);
-          inIngredients = true;
-          inSteps = false;
-          continue;
-        }
-        
-        // Skip lines that are clearly ingredient lines but might appear before the "Zutaten" header
-        if (!inIngredients && (line.startsWith('*') || /^\d+[\.,]?\s+g\s+/.test(line) || /^\d+\s+ml\s+/.test(line))) {
-          console.log(`Potenzielle Zutat übersprungen, da noch nicht im Zutatenbereich: "${line}"`);
-          continue;
-        }
-        
-        // More robust steps section detection
-        if (lineLC.includes('schritte:') || 
-            lineLC.includes('zubereitung:') || 
-            lineLC.includes('anleitung:') ||
-            line === 'Schritte' ||
-            line === 'Zubereitung' ||
-            line === 'Anleitung' ||
-            lineLC === 'zubereitung' ||
-            lineLC === 'anleitung' ||
-            lineLC === 'schritte' ||
-            lineLC.includes('so wird es gemacht')) {
-          console.log(`Zubereitungs-Abschnitt gefunden in Zeile ${i}: "${line}"`);
-          inIngredients = false;
-          inSteps = true;
-          continue;
-        }
-        
-        // End sections when a new section starts
-        if ((lineLC.includes('nährwert') || 
-             lineLC.includes('hinweis') ||
-             lineLC.includes('tipps')) && 
-            (inIngredients || inSteps)) {
-          console.log(`Ende des Abschnitts erkannt in Zeile ${i}: "${line}"`);
-          inIngredients = false;
-          inSteps = false;
-        }
-        
-        // Extract ingredients
-        if (inIngredients && line) {
-          // Check if line is a section header for ingredients (e.g. "Für die Sauce:")
-          if (line.includes(':') && !line.match(/^\d+\.\s+/) && !line.match(/^\*\s+/) && !line.startsWith('- ')) {
-            const sectionName = line.trim();
-            extractedIngredients.push({ 
-              name: `**${sectionName}**`, 
-              amount: '',
-              unit: ''
-            });
-            continue;
-          }
-          
-          // Check if line is a numbered or bulleted ingredient
-          let ingredient = line;
-          if (/^\d+\.\s+/.test(line)) {
-            ingredient = line.replace(/^\d+\.\s+/, '').trim();
-          } else if (/^\*\s+/.test(line) || line.startsWith('- ')) {
-            ingredient = line.replace(/^[\*\-]\s+/, '').trim();
-          }
-          
-          // Try to parse amount, unit and name
-          let amount = '';
-          let unit = '';
-          let name = ingredient;
-          
-          // Try to handle different formats:
-          // 1. "200 g Mehl" or "2 EL Öl"
-          // 2. "Mehl - 200 g" 
-          // 3. "Avocado, reif"
-          
-          // Format: "200 g Mehl"
-          const standardMatch = ingredient.match(/^([\d\/\.,]+)\s*([a-zA-ZäöüÄÖÜß]+|EL|TL|Prise|Stück|Dose|Packung|Tasse)\s+(.+)$/);
-          if (standardMatch) {
-            amount = standardMatch[1];
-            unit = standardMatch[2];
-            name = standardMatch[3];
-          } 
-          // Format: "Mehl - 200 g"
-          else if (ingredient.includes(' - ')) {
-            const parts = ingredient.split(' - ');
-            name = parts[0].trim();
-            if (parts[1]) {
-              const amountMatch = parts[1].match(/^([\d\/\.,]+)\s*([a-zA-ZäöüÄÖÜß]+|EL|TL)$/);
-              if (amountMatch) {
-                amount = amountMatch[1];
-                unit = amountMatch[2];
-              } else {
-                // Just in case it's just an amount without unit
-                amount = parts[1].trim();
-              }
-            }
-          }
-          
-          extractedIngredients.push({ 
-            name: name, 
-            amount: amount,
-            unit: unit
-          });
-        }
-        
-        // Extract steps
-        if (inSteps && line) {
-          // Check if this is a main step (e.g. "1. Keto-Hummus zubereiten:")
-          if ((/^\d+\.\s+/.test(line) && line.endsWith(':')) || 
-              (line.endsWith(':') && !lineLC.includes('nährwertangaben'))) {
-            // Create a new step with the header
-            let stepText = line.replace(/^\d+\.\s*/, '').trim();
-            // Format as bold
-            stepText = `**${stepText}**`;
-            steps.push(stepText);
-          }
-          // Check if this is a substep bullet point
-          else if (/^\s+[\*\-•]\s+/.test(line) || line.match(/^\s+\d+\.\s+/)) {
-            // If there's a previous step, append this as a bullet point
-            if (steps.length > 0) {
-              // Get the last step
-              const lastStep = steps[steps.length - 1];
-              
-              // If the last step doesn't have a list yet, start one
-              if (!lastStep.includes('<ul>')) {
-                steps[steps.length - 1] = `${lastStep}\n<ul>`;
-              }
-              
-              // Add the bullet point
-              const bulletText = line.replace(/^\s+[\*\-•]\s+/, '').replace(/^\s+\d+\.\s+/, '').trim();
-              steps[steps.length - 1] = `${steps[steps.length - 1]}\n<li>${bulletText}</li>`;
-            }
-          }
-          // If the previous step has an open list and this is not a bullet, close the list
-          else if (steps.length > 0 && steps[steps.length - 1].includes('<ul>') && 
-                   !steps[steps.length - 1].includes('</ul>') && 
-                   !line.match(/^\s+[\*\-•]\s+/) && 
-                   !line.match(/^\s+\d+\.\s+/)) {
-            steps[steps.length - 1] = `${steps[steps.length - 1]}\n</ul>`;
-            
-            // And add this line as a new step if not empty
-            if (line.trim()) {
-              // Remove numbering like "1." or "1. " from the beginning
-              let step = line.replace(/^\d+\.\s*/, '').trim();
-              if (step) {
-                steps.push(step);
-              }
-            }
-          }
-          // Regular step
-          else if (line.trim()) {
-            // Remove numbering like "1." or "1. " from the beginning
-            let step = line.replace(/^\d+\.\s*/, '').trim();
-            if (step) {
-              steps.push(step);
-            }
-          }
-        }
-      }
-      
-      // Close any open lists in steps
-      for (let i = 0; i < steps.length; i++) {
-        if (steps[i].includes('<ul>') && !steps[i].includes('</ul>')) {
-          steps[i] = `${steps[i]}\n</ul>`;
-        }
-      }
-      
-      // If no ingredients were found, use the provided ingredients
-      if (extractedIngredients.length === 0) {
-        extractedIngredients = ingredients.map(ing => ({ name: ing, amount: '', unit: '' }));
-      }
-      
-      console.log(`Extrahierte Zutaten:`, extractedIngredients);
-      console.log(`Extrahierte Schritte:`, steps);
-      
-      // Create recipe data object without image first
-      const recipeData = {
-        title,
-        ingredients: extractedIngredients,
-        steps: steps,
-        cuisine: preferences.cuisine || undefined,
-        dietaryRestrictions: preferences.diet ? [preferences.diet] : [],
-        difficulty: preferences.difficulty,
-        isAIGenerated: true
-      };
+      // Parse and extract recipe components from the AI-generated text
+      const recipeData = parseRecipeText(recipe.text);
       
       // Process image separately if available
       if (recipeImage) {
@@ -577,7 +492,6 @@ const RecipeGenerator = () => {
         }
       }
       
-      // eslint-disable-next-line
       const savedRecipe = await createRecipe(recipeData);
       setRecipeImage(null);
       setSuccess('Rezept erfolgreich gespeichert!');
@@ -590,51 +504,189 @@ const RecipeGenerator = () => {
       console.error('Fehler beim Speichern des Rezepts:', error);
       if (error.response && error.response.status === 413) {
         setError('Das Bild ist zu groß für den Upload. Bitte verwenden Sie ein kleineres Bild.');
-      } else {
+        } else {
         setError(error.response?.data?.message || 'Fehler beim Speichern des Rezepts.');
       }
     }
   };
 
-  // Function to format recipe text with proper HTML
+  // Parse the AI-generated recipe text into structured data based on the new markdown format
+  const parseRecipeText = (text) => {
+    const recipeData = {
+      isAIGenerated: true,
+      title: '',
+      emoji: '',
+      tags: [],
+      difficulty: 'medium',
+      prepTime: null,
+      cookTime: null,
+      description: '',
+      ingredients: [],
+      steps: [],
+      nutrition: {},
+      tips: [],
+    };
+
+    // Helper function for robust section extraction
+    const extractSection = (heading) => {
+      // Find the start of the heading line
+      const headingRegex = new RegExp(`^## ${heading}[^\n]*`, 'm');
+      const headingMatch = text.match(headingRegex);
+      
+      if (!headingMatch) return '';
+      
+      // Find the index immediately after the heading line
+      const startIndex = headingMatch.index + headingMatch[0].length + 1; // +1 for the newline
+      
+      // Find the index of the next heading (## or #) or end of string
+      const nextHeadingRegex = /^#{1,2}\s/gm; // Match next # or ## at start of a line
+      nextHeadingRegex.lastIndex = startIndex; // Start searching after the current heading
+      const nextMatch = nextHeadingRegex.exec(text);
+      
+      // Determine the end index
+      const endIndex = nextMatch ? nextMatch.index : text.length;
+      
+      // Extract the content between the indices
+      return text.substring(startIndex, endIndex).trim();
+    };
+
+    // Extract title
+    const titleMatch = text.match(/^# Titel:\s*(.+)$/m);
+    recipeData.title = titleMatch ? titleMatch[1].trim() : "Generiertes Rezept";
+
+    // Extract emoji
+    const emojiMatch = text.match(/^\*\*Emoji:\*\*\s*(.+)$/m);
+    recipeData.emoji = emojiMatch ? emojiMatch[1].trim() : '';
+
+    // Extract tags
+    const tagsMatch = text.match(/^\*\*Tags:\*\*\s*(.+)$/m);
+    recipeData.tags = tagsMatch ? tagsMatch[1].split(',').map(tag => tag.trim()) : [];
+
+    // Extract difficulty
+    const difficultyMatch = text.match(/^\*\*Schwierigkeit:\*\*\s*(easy|medium|hard)$/im);
+    recipeData.difficulty = difficultyMatch ? difficultyMatch[1].toLowerCase() : 'medium';
+
+    // Extract prepTime
+    const prepTimeMatch = text.match(/^\*\*Zubereitungszeit:\*\*\s*(\d+)\s*Minuten$/im);
+    recipeData.prepTime = prepTimeMatch ? parseInt(prepTimeMatch[1], 10) : null;
+
+    // Extract cookTime
+    const cookTimeMatch = text.match(/^\*\*Kochzeit:\*\*\s*(\d+)\s*Minuten$/im);
+    recipeData.cookTime = cookTimeMatch ? parseInt(cookTimeMatch[1], 10) : null;
+
+    // Extract sections using the helper function
+    recipeData.description = extractSection('Beschreibung');
+    const ingredientsText = extractSection('Zutaten');
+    const stepsText = extractSection('Zubereitung');
+    const tipsText = extractSection('Tipps');
+    const nutritionTextRaw = extractSection('Nährwerte'); // Extract nutrition block too
+
+    // Extract ingredients from its section text
+    if (ingredientsText) {
+      const ingredientLines = ingredientsText.split('\n').filter(line => line.trim().startsWith('-'));
+      ingredientLines.forEach(line => {
+        const ingredientText = line.replace(/^-\s*/, '').trim();
+        // Updated regex to better capture various units and amounts
+        const match = ingredientText.match(/^(?:([\d.,]+)\s*)?(?:(EL|TL|ml|g|kg|l|Stück|Prise|Dose|Packung|Tasse[n]?|[a-zA-ZäöüÄÖÜß]+)\s+)?(.+)$/i);
+        if (match) {
+          const [, amount, unit, name] = match;
+          recipeData.ingredients.push({
+            amount: amount ? amount.replace(',', '.') : '', // Normalize comma to dot if needed
+            unit: unit || '',
+            name: name.trim()
+          });
+        } else {
+          recipeData.ingredients.push({ amount: '', unit: '', name: ingredientText });
+        }
+      });
+    }
+
+    // Extract steps from its section text
+    if (stepsText) {
+      recipeData.steps = stepsText.split('\n')
+        .filter(line => /^(\d+)\.\s/.test(line.trim()))
+        .map(line => line.replace(/^(\d+)\.\s*/, '').trim());
+    }
+
+    // Extract nutrition data from its raw block
+    if (nutritionTextRaw) {
+      // Adjusted regex to capture digits after skipping non-digit characters
+      const caloriesMatch = nutritionTextRaw.match(/-\s*Kalorien:[^\d]*(\d+)/i);
+      if (caloriesMatch) recipeData.nutrition.calories = caloriesMatch[1];
+      const proteinMatch = nutritionTextRaw.match(/-\s*(?:Protein|Eiweiß):[^\d]*(\d+)/i);
+      if (proteinMatch) recipeData.nutrition.protein = proteinMatch[1];
+      const carbsMatch = nutritionTextRaw.match(/-\s*Kohlenhydrate:[^\d]*(\d+)/i);
+      if (carbsMatch) recipeData.nutrition.carbs = carbsMatch[1];
+      const fatMatch = nutritionTextRaw.match(/-\s*Fett:[^\d]*(\d+)/i);
+      if (fatMatch) recipeData.nutrition.fat = fatMatch[1];
+    }
+
+    // Extract tips from its section text
+    if (tipsText) {
+      recipeData.tips = tipsText.split('\n')
+        .filter(line => line.trim().startsWith('-'))
+        .map(line => line.replace(/^-\s*/, '').trim());
+    }
+
+    // Add other preference data that might not be explicitly in the text
+    recipeData.preferences = { ...preferences }; // Store original preferences
+    if (!recipeData.tags.includes(preferences.diet) && preferences.diet) recipeData.tags.push(preferences.diet);
+    if (!recipeData.tags.includes(preferences.cuisine) && preferences.cuisine) recipeData.tags.push(preferences.cuisine);
+
+    return recipeData;
+  };
+
+  // Function to format recipe text with proper HTML for preview
   const formatRecipeText = (text) => {
     if (!text) return '';
     
-    // Ensure text is not truncated by ensuring any unclosed markdown is fixed
-    let formattedText = text;
+    // Convert markdown headings to HTML
+    let formattedText = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    formattedText = formattedText.replace(/^## (.+)$/gm, '<h2>$1</h2>');
     
-    // Fix any unclosed markdown at the end (like ** without closing **)
-    if ((formattedText.match(/\*\*/g) || []).length % 2 !== 0) {
-      formattedText = formattedText.replace(/\*\*([^*]*)$/, '**$1**');
-    }
-    
-    // Format text with bold headlines
+    // Format bold text
     formattedText = formattedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
     // Convert markdown lists to HTML lists
     const lines = formattedText.split('\n');
     let inList = false;
-    let listHtml = '';
     let resultLines = [];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = line.trim();
       
-      if (trimmedLine.startsWith('*')) {
+      if (trimmedLine.startsWith('-')) {
         if (!inList) {
           inList = true;
-          listHtml = '<ul style="list-style-type: disc; padding-left: 20px; margin: 8px 0;">';
+          resultLines.push('<ul style="list-style-type: disc; padding-left: 20px; margin: 8px 0;">');
         }
-        // Extract text after the asterisk and add to list
+        // Extract text after the dash and add to list
         const listItemText = trimmedLine.substring(1).trim();
-        listHtml += `<li style="margin-bottom: 4px;">${listItemText}</li>`;
+        resultLines.push(`<li style="margin-bottom: 4px;">${listItemText}</li>`);
+      } else if (trimmedLine.match(/^\d+\./)) {
+        if (inList) {
+          // End previous unordered list if exists
+          inList = false;
+          resultLines.push('</ul>');
+        }
+        
+        // For numbered lists, we'll just style them inline
+        const numberMatch = trimmedLine.match(/^(\d+)\.\s*(.+)$/);
+        if (numberMatch) {
+          const [, number, content] = numberMatch;
+          resultLines.push(`<div style="display: flex; margin-bottom: 8px;">
+            <div style="min-width: 24px; font-weight: bold; margin-right: 8px;">${number}.</div>
+            <div>${content}</div>
+          </div>`);
+        } else {
+          resultLines.push(line);
+        }
       } else {
         if (inList) {
           // End current list
           inList = false;
-          listHtml += '</ul>';
-          resultLines.push(listHtml);
+          resultLines.push('</ul>');
         }
         resultLines.push(line);
       }
@@ -642,105 +694,316 @@ const RecipeGenerator = () => {
     
     // If we had a list at the end of text, close it
     if (inList) {
-      listHtml += '</ul>';
-      resultLines.push(listHtml);
+      resultLines.push('</ul>');
     }
     
     return resultLines.join('\n');
   };
 
+  // Function to prepare recipe data for preview
+  const prepareRecipePreview = () => {
+    if (!recipe) return null;
+    
+    return parseRecipeText(recipe.text); // Use the parsed data directly
+  };
+
+  const recipePreview = recipe ? prepareRecipePreview() : null;
+  const getDifficultyText = (difficulty) => {
+    switch (difficulty) {
+      case 'easy': return 'Einfach';
+      case 'medium': return 'Mittel';
+      case 'hard': return 'Anspruchsvoll';
+      default: return 'Mittel';
+    }
+  };
+
+  const formatStepText = (text) => {
+    if (!text) return '';
+    const hasHeadline = /^([^:]+:)(.+)/.exec(text);
+    if (hasHeadline) {
+      const [, title, description] = hasHeadline;
+      return `<div class="step-title">${title.trim()}</div><div class="step-description">${description.trim()}</div>`;
+    }
+    return `<div>${text}</div>`;
+  };
+
   return (
-    <Card title="Personalisiertes Rezept erstellen">
-      <Form onSubmit={handleSubmit}>
-        {error && <Error>{error}</Error>}
-        {aiError && <Error>{aiError}</Error>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
-        
-        <div>
-          <h4>Verfügbare Zutaten auswählen</h4>
-          <IngredientSelector 
-            selectedIngredients={ingredients} 
-            onChange={setIngredients}
-          />
-        </div>
-        
-        <div>
-          <h4>Präferenzen</h4>
-          <PreferencesContainer>
-            <Input
-              label="Ernährungsform"
-              name="diet"
-              placeholder="z.B. Vegetarisch, Vegan, Keto"
-              value={preferences.diet}
-              onChange={handlePreferenceChange}
-            />
-            <Input
-              label="Küchenstil"
-              name="cuisine"
-              placeholder="z.B. Italienisch, Asiatisch, Deutsch"
-              value={preferences.cuisine}
-              onChange={handlePreferenceChange}
-            />
-          </PreferencesContainer>
-          
-          <div>
-            <label>Schwierigkeitsgrad</label>
-            <select 
-              name="difficulty"
-              value={preferences.difficulty}
-              onChange={handlePreferenceChange}
-            >
-              <option value="easy">Einfach</option>
-              <option value="medium">Mittel</option>
-              <option value="hard">Anspruchsvoll</option>
-            </select>
-          </div>
-        </div>
-        
-        <Button 
-          type="submit" 
-          disabled={ingredients.length === 0 || isLoading}
-          fullWidth
-        >
-          {isLoading ? 'Rezept wird erstellt...' : 'Rezept erstellen'}
-        </Button>
-      </Form>
-      
-      {isLoading && <Loading>Rezept wird generiert...</Loading>}
-      
-      {recipe && !isLoading && (
-        <RecipeDisplay>
-          <RecipeTitle>Dein Rezept</RecipeTitle>
-          {recipe.text && recipe.text.toLowerCase().includes('titel:') && (
-            <ExtractedTitle>
-              Erkannter Titel: {recipe.text.match(/titel\s*:\s*([^\n]+)/i)?.[1] || "Nicht gefunden"}
-            </ExtractedTitle>
-          )}
-          <RecipeContent dangerouslySetInnerHTML={{ __html: formatRecipeText(recipe.text) }} />
-          
-          {isAuthenticated && (
-            <>
-              <div style={{ marginTop: '20px' }}>
-                <h4>Rezeptbild hinzufügen (optional)</h4>
-                <ImageUpload 
-                  onChange={handleImageChange}
-                />
-              </div>
+    <PageContainer>
+      <ContentWrapper>
+        <Card title="Personalisiertes Rezept erstellen">
+          <Form onSubmit={handleSubmit}>
+            {error && <Error>{error}</Error>}
+            {aiError && <Error>{aiError}</Error>}
+            {success && <SuccessMessage>{success}</SuccessMessage>}
+            
+            <div>
+              <h4>Verfügbare Zutaten auswählen</h4>
+              <IngredientSelector 
+                selectedIngredients={ingredients} 
+                onChange={setIngredients}
+              />
+            </div>
+            
+            <div>
+              <h4>Präferenzen</h4>
+              <PreferencesContainer>
+                <div>
+                  <label htmlFor="diet-select">Ernährungsform</label>
+                  <select 
+                    id="diet-select"
+                    name="diet"
+                    value={preferences.diet}
+                    onChange={handlePreferenceChange}
+                  >
+                    {dietOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="cuisine-select">Küchenstil</label>
+                  <select 
+                    id="cuisine-select"
+                    name="cuisine"
+                    value={preferences.cuisine}
+                    onChange={handlePreferenceChange}
+                  >
+                    {cuisineOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </PreferencesContainer>
               
-              <ButtonGroup>
-                <Button 
-                  onClick={handleSaveRecipe}
-                  disabled={saveLoading}
-                >
-                  {saveLoading ? 'Speichern...' : 'Rezept speichern'}
-                </Button>
-              </ButtonGroup>
-            </>
+              <PreferencesContainer style={{ marginTop: '16px' }}>
+                <div>
+                  <label>Schwierigkeitsgrad</label>
+                  <select 
+                    name="difficulty"
+                    value={preferences.difficulty}
+                    onChange={handlePreferenceChange}
+                  >
+                    <option value="easy">Einfach</option>
+                    <option value="medium">Mittel</option>
+                    <option value="hard">Anspruchsvoll</option>
+                  </select>
+                </div>
+                <PreferencesContainer>
+                  <Input
+                    label="Vorbereitungszeit (Min.)"
+                    name="prepTime"
+                    type="number"
+                    placeholder="15"
+                    value={preferences.prepTime}
+                    onChange={handlePreferenceChange}
+                  />
+                  <Input
+                    label="Kochzeit (Min.)"
+                    name="cookTime"
+                    type="number"
+                    placeholder="20"
+                    value={preferences.cookTime}
+                    onChange={handlePreferenceChange}
+                  />
+                </PreferencesContainer>
+              </PreferencesContainer>
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={ingredients.length === 0 || isLoading}
+              fullWidth
+            >
+              {isLoading ? 'Rezept wird erstellt...' : 'Rezept erstellen'}
+            </Button>
+          </Form>
+          
+          {isLoading && <Loading>Rezept wird generiert...</Loading>}
+          
+          {recipePreview && !isLoading && (
+            <RecipeDisplay>
+              <RecipeHeader>
+                <HeaderTopRow>
+                  <RecipeTitle>{recipePreview.title}</RecipeTitle>
+                </HeaderTopRow>
+                
+                <TagsContainer>
+                  <Tag>KI-generiert</Tag>
+                  {recipePreview.dietaryRestrictions?.map((diet, index) => (
+                    <Tag key={index}>{diet}</Tag>
+                  ))}
+                  {recipePreview.cuisine && <Tag>{recipePreview.cuisine}</Tag>}
+                </TagsContainer>
+                
+                <RecipeMeta>
+                  <MetaItem>
+                    <FaUtensils /> 
+                    <span>Schwierigkeit:</span>
+                    <strong>{getDifficultyText(recipePreview.difficulty)}</strong>
+                  </MetaItem>
+                  {(recipePreview.prepTime || recipePreview.cookTime) && (
+                    <MetaItem>
+                      <FaClock /> 
+                      <span>Zeit:</span>
+                      <strong>
+                        {recipePreview.prepTime && `${recipePreview.prepTime} Min. Vorb.`}
+                        {recipePreview.prepTime && recipePreview.cookTime && ' / '}
+                        {recipePreview.cookTime && `${recipePreview.cookTime} Min. Kochz.`}
+                      </strong>
+                    </MetaItem>
+                  )}
+                </RecipeMeta>
+              </RecipeHeader>
+              
+              {recipePreview.description && (
+                <Section>
+                  <div style={{ fontSize: '16px', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
+                    {recipePreview.description.split('\n\n').map((para, index) => <p key={index}>{para}</p>)}
+                  </div>
+                </Section>
+              )}
+              
+              {recipePreview.ingredients && recipePreview.ingredients.length > 0 && (
+                <Section>
+                  <SectionTitle>Zutaten</SectionTitle>
+                  <IngredientList>
+                    {recipePreview.ingredients.map((ingredient, index) => (
+                      <Ingredient key={index}>
+                        {ingredient.amount || ingredient.unit ? (
+                          <> 
+                            <strong>{`${ingredient.amount || ''} ${ingredient.unit || ''}`.trim()}</strong>
+                            <span>{ingredient.name}</span>
+                          </>
+                        ) : (
+                          <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span>
+                        )}
+                      </Ingredient>
+                    ))}
+                  </IngredientList>
+                </Section>
+              )}
+              
+              {recipePreview.steps && recipePreview.steps.length > 0 && (
+                <Section>
+                  <SectionTitle>Zubereitung</SectionTitle>
+                  <StepsList>
+                    {recipePreview.steps.map((step, index) => (
+                      <Step key={index}>
+                        <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
+                      </Step>
+                    ))}
+                  </StepsList>
+                </Section>
+              )}
+              
+              {recipePreview.nutrition && Object.keys(recipePreview.nutrition).length > 0 && ( 
+                <Section>
+                  <SectionTitle>Nährwerte (ca. pro Portion)</SectionTitle>
+                  <NutritionSection>
+                    <NutritionGrid>
+                      {recipePreview.nutrition.calories && (
+                        <NutritionItem>
+                          <span>Kalorien</span>
+                          <span>{recipePreview.nutrition.calories} kcal</span>
+                        </NutritionItem>
+                      )}
+                      {recipePreview.nutrition.protein && (
+                        <NutritionItem>
+                          <span>Eiweiß</span>
+                          <span>{recipePreview.nutrition.protein} g</span>
+                        </NutritionItem>
+                      )}
+                      {recipePreview.nutrition.carbs && (
+                        <NutritionItem>
+                          <span>Kohlenhydrate</span>
+                          <span>{recipePreview.nutrition.carbs} g</span>
+                        </NutritionItem>
+                      )}
+                      {recipePreview.nutrition.fat && (
+                        <NutritionItem>
+                          <span>Fett</span>
+                          <span>{recipePreview.nutrition.fat} g</span>
+                        </NutritionItem>
+                      )}
+                    </NutritionGrid>
+                  </NutritionSection>
+                </Section>
+              )}
+              
+              {recipePreview.tips && recipePreview.tips.length > 0 && (
+                <Section>
+                  <SectionTitle>Tipps</SectionTitle>
+                  <ul>
+                    {recipePreview.tips.map((tip, index) => (
+                      <li key={index}>{tip}</li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {isAuthenticated && (
+                <>
+                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-gray-200)' }}>
+                    <h4>Rezeptbild hinzufügen (optional)</h4>
+                    <ImageUpload 
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                  
+                  <ButtonGroup>
+                    <Button 
+                      onClick={handleSaveRecipe}
+                      disabled={saveLoading}
+                    >
+                      {saveLoading ? 'Speichern...' : 'Rezept speichern'}
+                    </Button>
+                  </ButtonGroup>
+                </>
+              )}
+            </RecipeDisplay>
           )}
-        </RecipeDisplay>
-      )}
-    </Card>
+          
+          {/* Fallback display if preview parsing fails but raw text exists */}
+          {!recipePreview && recipe && !isLoading && (
+            <RecipeDisplay>
+              <RecipeTitle>Dein Rezept (Vorschau fehlgeschlagen)</RecipeTitle>
+              {recipe.text && recipe.text.toLowerCase().includes('titel:') && (
+                <ExtractedTitle>
+                  Erkannter Titel: {recipe.text.match(/titel\s*:\s*([^\n]+)/i)?.[1] || "Nicht gefunden"}
+                </ExtractedTitle>
+              )}
+              <RecipeContent dangerouslySetInnerHTML={{ __html: formatRecipeText(recipe.text) }} />
+              
+              {isAuthenticated && (
+                <>
+                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-gray-200)' }}>
+                    <h4>Rezeptbild hinzufügen (optional)</h4>
+                    <ImageUpload 
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                  
+                  <ButtonGroup>
+                    <Button 
+                      onClick={handleSaveRecipe}
+                      disabled={saveLoading}
+                    >
+                      {saveLoading ? 'Speichern...' : 'Rezept speichern'}
+                    </Button>
+                  </ButtonGroup>
+                </>
+              )}
+            </RecipeDisplay>
+          )}
+        </Card>
+      </ContentWrapper>
+    </PageContainer>
   );
 };
 
-export default RecipeGenerator; 
+export default RecipeGenerator;

@@ -93,16 +93,16 @@ const HamburgerLine = styled.span`
   transform-origin: 1px;
   
   &:first-child {
-    transform: ${({ isOpen }) => isOpen ? 'rotate(45deg)' : 'rotate(0)'};
+    transform: ${({ $isOpen }) => $isOpen ? 'rotate(45deg)' : 'rotate(0)'};
   }
   
   &:nth-child(2) {
-    opacity: ${({ isOpen }) => isOpen ? '0' : '1'};
-    transform: ${({ isOpen }) => isOpen ? 'translateX(-20px)' : 'translateX(0)'};
+    opacity: ${({ $isOpen }) => $isOpen ? '0' : '1'};
+    transform: ${({ $isOpen }) => $isOpen ? 'translateX(-20px)' : 'translateX(0)'};
   }
   
   &:nth-child(3) {
-    transform: ${({ isOpen }) => isOpen ? 'rotate(-45deg)' : 'rotate(0)'};
+    transform: ${({ $isOpen }) => $isOpen ? 'rotate(-45deg)' : 'rotate(0)'};
   }
 `;
 
@@ -116,13 +116,13 @@ const Nav = styled.nav`
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   top: 0;
-  right: ${({ isOpen }) => isOpen ? '0' : '-100%'};
+  right: ${({ $isOpen }) => $isOpen ? '0' : '-100%'};
   height: 100vh;
   width: 80%;
   max-width: 300px;
   padding: 2rem;
   transition: right 0.3s ease-in-out;
-  box-shadow: ${({ isOpen }) => isOpen ? '-5px 0 15px rgba(0, 0, 0, 0.1)' : 'none'};
+  box-shadow: ${({ $isOpen }) => $isOpen ? '-5px 0 15px rgba(0, 0, 0, 0.1)' : 'none'};
   z-index: 10;
   
   @media (min-width: 768px) {
@@ -146,8 +146,8 @@ const Overlay = styled.div`
   width: 100%;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.3);
-  opacity: ${({ isOpen }) => isOpen ? '1' : '0'};
-  visibility: ${({ isOpen }) => isOpen ? 'visible' : 'hidden'};
+  opacity: ${({ $isOpen }) => $isOpen ? '1' : '0'};
+  visibility: ${({ $isOpen }) => $isOpen ? 'visible' : 'hidden'};
   transition: all 0.3s ease-in-out;
   z-index: 5;
   backdrop-filter: blur(3px);
@@ -182,7 +182,7 @@ const NavLink = styled(Link)`
     position: absolute;
     left: 0;
     bottom: 0;
-    width: ${({ isActive }) => isActive ? '100%' : '0'};
+    width: ${({ $isActive }) => $isActive ? '100%' : '0'};
     height: 2px;
     background-color: var(--color-primary);
     transition: width 0.3s ease;
@@ -314,26 +314,26 @@ const Header = () => {
         </LogoContainer>
         
         <HamburgerButton onClick={toggleMenu} aria-label="Menu">
-          <HamburgerLine isOpen={isOpen} />
-          <HamburgerLine isOpen={isOpen} />
-          <HamburgerLine isOpen={isOpen} />
+          <HamburgerLine $isOpen={isOpen} />
+          <HamburgerLine $isOpen={isOpen} />
+          <HamburgerLine $isOpen={isOpen} />
         </HamburgerButton>
         
-        <Overlay isOpen={isOpen} onClick={() => setIsOpen(false)} />
+        <Overlay $isOpen={isOpen} onClick={() => setIsOpen(false)} />
         
-        <Nav isOpen={isOpen}>
+        <Nav $isOpen={isOpen} onClick={(e) => e.stopPropagation()}>
           <NavLinkContainer>
-            <NavLink to="/" isActive={location.pathname === '/'}>
+            <NavLink to="/" $isActive={location.pathname === '/'}>
               Home
             </NavLink>
-            <NavLink to="/recipes" isActive={location.pathname.startsWith('/recipes')}>
+            <NavLink to="/recipes" $isActive={location.pathname.startsWith('/recipes')}>
               Rezepte
             </NavLink>
           </NavLinkContainer>
           
           {isAuthenticated ? (
             <UserContainer>
-              <NavLink to="/profile" isActive={location.pathname === '/profile'}>
+              <NavLink to="/profile" $isActive={location.pathname === '/profile'}>
                 Profil
               </NavLink>
               <UserInfo>{user.username}</UserInfo>
@@ -345,7 +345,7 @@ const Header = () => {
             </UserContainer>
           ) : (
             <AuthButtonsContainer>
-              <NavLink to="/login" isActive={location.pathname === '/login'}>
+              <NavLink to="/login" $isActive={location.pathname === '/login'}>
                 Anmelden
               </NavLink>
               <Link to="/register">

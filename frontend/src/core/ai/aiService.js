@@ -2,11 +2,12 @@ import api from '../api/api';
 
 class AIService {
   // Generate a recipe based on ingredients and preferences
-  async generateRecipe(ingredients, preferences) {
+  async generateRecipe(ingredients, preferences, systemPrompt) {
     try {
       const response = await api.post('/ai/generate-recipe', {
         ingredients,
-        preferences
+        preferences,
+        systemPrompt
       });
       return response.data.recipe;
     } catch (error) {
