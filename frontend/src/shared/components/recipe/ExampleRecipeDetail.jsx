@@ -4,6 +4,8 @@ import styled from 'styled-components';
 import Button from '../common/Button';
 import { GradientButton } from '../ui/GradientButton';
 import { FaUtensils, FaClock, FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
+import Card from '../common/Card';
+import { useTheme } from '../../context/ThemeContext';
 
 // --- Base Styles inspired by Apple Design ---
 const PageContainer = styled.div`
@@ -87,8 +89,12 @@ const TagsContainer = styled.div`
 
 const Tag = styled.span`
   display: inline-block;
-  background-color: var(--color-gray-200);
-  color: var(--color-text-secondary);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-300)' 
+    : 'var(--color-gray-200)'};
+  color: ${props => props.theme === 'dark'
+    ? 'var(--color-gray-900)' 
+    : 'var(--color-text-secondary)'};
   font-size: 13px;
   font-weight: 500;
   padding: 5px 12px;
@@ -129,7 +135,7 @@ const SectionTitle = styled.h2`
   color: var(--color-text-primary);
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-gray-200);
+  border-bottom: 1px solid var(--color-border);
 `;
 
 const SectionHeader = styled.div`
@@ -138,7 +144,7 @@ const SectionHeader = styled.div`
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-gray-200);
+  border-bottom: 1px solid var(--color-border);
 `;
 
 // --- Ingredient Styles ---
@@ -156,7 +162,9 @@ const Ingredient = styled.li`
   align-items: baseline;
   gap: 10px;
   padding: 12px;
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   border-radius: 10px;
   font-size: 15px;
   
@@ -188,10 +196,14 @@ const Step = styled.li`
   counter-increment: steps;
   display: flex;
   gap: 16px;
-  background-color: var(--color-background);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: ${props => props.theme === 'dark' 
+    ? '0 1px 3px rgba(0, 0, 0, 0.15)' 
+    : '0 1px 3px rgba(0, 0, 0, 0.06)'};
   position: relative;
   line-height: 1.6;
 
@@ -202,7 +214,9 @@ const Step = styled.li`
     justify-content: center;
     min-width: 32px;
     height: 32px;
-    background-color: var(--color-gray-100);
+    background-color: ${props => props.theme === 'dark' 
+      ? 'var(--color-gray-300)' 
+      : 'var(--color-gray-100)'};
     color: var(--color-text-secondary);
     font-weight: 600;
     font-size: 16px;
@@ -246,7 +260,9 @@ const Step = styled.li`
 
 // --- Nutrition Styles ---
 const NutritionSection = styled.div`
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   border-radius: 12px;
   padding: 20px;
 `;
@@ -259,7 +275,9 @@ const NutritionGrid = styled.div`
 
 const NutritionItem = styled.div`
   padding: 16px;
-  background-color: var(--color-background);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
   border-radius: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   display: flex;
@@ -466,6 +484,14 @@ const ActionButton = styled.button`
   }
 `;
 
+const ErrorMessage = styled.div`
+  color: var(--color-danger);
+  padding: 10px;
+  border-radius: 8px;
+  background-color: var(--color-danger-hover);
+  margin-bottom: 16px;
+`;
+
 const recipesData = [
   {
     id: 'gemuesefrittata',
@@ -598,6 +624,7 @@ const ExampleRecipeDetail = ({ recipeId }) => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
+  const { theme } = useTheme();
 
   // Static messages for the assistant
   const [messages, setMessages] = useState([
@@ -686,7 +713,7 @@ const ExampleRecipeDetail = ({ recipeId }) => {
           
           <TagsContainer>
             {recipe.tags.map((tag, index) => (
-              <Tag key={index}>{tag}</Tag>
+              <Tag key={index} theme={theme}>{tag}</Tag>
             ))}
           </TagsContainer>
           
@@ -723,7 +750,7 @@ const ExampleRecipeDetail = ({ recipeId }) => {
             <SectionTitle>Zutaten</SectionTitle>
             <IngredientList>
               {recipe.ingredients.map((ingredient, index) => (
-                <Ingredient key={index}>
+                <Ingredient key={index} theme={theme}>
                   {ingredient.amount || ingredient.unit ? (
                     <> 
                       <strong>{`${ingredient.amount || ''} ${ingredient.unit || ''}`.trim()}</strong>
@@ -745,7 +772,7 @@ const ExampleRecipeDetail = ({ recipeId }) => {
             </SectionHeader>
             <StepsList>
               {recipe.steps.map((step, index) => (
-                <Step key={index}>
+                <Step key={index} theme={theme}>
                   <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
                 </Step>
               ))}
@@ -756,28 +783,28 @@ const ExampleRecipeDetail = ({ recipeId }) => {
         {recipe.nutrition && Object.keys(recipe.nutrition).length > 0 && ( 
           <Section>
             <SectionTitle>Nährwerte (ca. pro Portion)</SectionTitle>
-            <NutritionSection>
+            <NutritionSection theme={theme}>
               <NutritionGrid>
                 {recipe.nutrition.calories && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Kalorien</span>
                     <span>{recipe.nutrition.calories} kcal</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.protein && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Eiweiß</span>
                     <span>{recipe.nutrition.protein} g</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.carbs && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Kohlenhydrate</span>
                     <span>{recipe.nutrition.carbs} g</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.fat && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Fett</span>
                     <span>{recipe.nutrition.fat} g</span>
                   </NutritionItem>

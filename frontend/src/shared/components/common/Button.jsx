@@ -13,6 +13,12 @@ const StyledButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   
+  @media (max-width: 768px) {
+    padding: 10px 16px; /* Slightly larger touch target on mobile */
+    font-size: 15px;
+    border-radius: 6px;
+  }
+  
   ${({ variant }) => {
     switch (variant) {
       case 'primary':
@@ -23,6 +29,10 @@ const StyledButton = styled.button`
           
           &:hover {
             filter: brightness(0.9);
+          }
+          
+          &:active {
+            filter: brightness(0.85);
           }
           
           &:disabled {
@@ -40,6 +50,10 @@ const StyledButton = styled.button`
             background-color: var(--color-paper);
           }
           
+          &:active {
+            background-color: var(--color-gray-100);
+          }
+          
           &:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -55,9 +69,37 @@ const StyledButton = styled.button`
             filter: brightness(0.9);
           }
           
+          &:active {
+            filter: brightness(0.85);
+          }
+          
           &:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+          }
+        `;
+      case 'text':
+        return `
+          background-color: transparent;
+          color: var(--color-primary);
+          border: none;
+          padding: 6px 12px;
+          
+          &:hover {
+            background-color: rgba(255, 132, 51, 0.05);
+          }
+          
+          &:active {
+            background-color: rgba(255, 132, 51, 0.1);
+          }
+          
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+          
+          @media (max-width: 768px) {
+            padding: 8px 12px;
           }
         `;
       default:
@@ -68,6 +110,10 @@ const StyledButton = styled.button`
           
           &:hover {
             filter: brightness(0.9);
+          }
+          
+          &:active {
+            filter: brightness(0.85);
           }
           
           &:disabled {
@@ -81,12 +127,42 @@ const StyledButton = styled.button`
   ${({ $fullWidth }) => $fullWidth && `
     width: 100%;
   `}
+  
+  ${({ size }) => {
+    switch (size) {
+      case 'small':
+        return `
+          padding: 6px 12px;
+          font-size: 12px;
+          line-height: 20px;
+          
+          @media (max-width: 768px) {
+            padding: 8px 12px;
+            font-size: 13px;
+          }
+        `;
+      case 'large':
+        return `
+          padding: 12px 24px;
+          font-size: 16px;
+          line-height: 28px;
+          
+          @media (max-width: 768px) {
+            padding: 14px 24px;
+            font-size: 16px;
+          }
+        `;
+      default:
+        return '';
+    }
+  }}
 `;
 
 const Button = ({ 
   children, 
   variant = 'primary', 
-  $fullWidth = false, 
+  $fullWidth = false,
+  size = 'medium',
   type = 'button',
   ...rest 
 }) => {
@@ -95,6 +171,7 @@ const Button = ({
       type={type}
       variant={variant}
       $fullWidth={$fullWidth}
+      size={size}
       {...rest}
     >
       {children}

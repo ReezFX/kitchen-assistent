@@ -3,65 +3,247 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useAIService } from '../../hooks/useAIService';
+import { API_BASE_URL } from '../../../core/api/api';
 import ImageUpload from '../common/ImageUpload';
-import { FaUtensils, FaClock, FaArrowRight, FaArrowLeft, FaEdit, FaTrash, FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
+import Button from '../common/Button';
+import { FaUtensils, FaClock, FaArrowRight, FaArrowLeft, FaEdit, FaTrash, FaChevronLeft, FaPaperPlane, FaListUl, FaClipboardList, FaInfoCircle, FaHeart, FaLightbulb, FaAppleAlt, FaBalanceScale, FaBook } from 'react-icons/fa';
+import { useTheme } from '../../context/ThemeContext';
 // import LoadingSpinner from '../common/LoadingSpinner'; // Auskommentiert: Modul nicht gefunden
 // import ErrorMessage from '../common/ErrorMessage'; // Auskommentiert: Modul nicht gefunden
 // import InteractiveAIChat from './InteractiveAIChat'; // Auskommentiert: Modul nicht gefunden
 // import { toast } from 'react-toastify'; // Auskommentiert: Modul nicht gefunden
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Auskommentiert: Modul nicht gefunden
 
-// --- Styles copied from ExampleRecipeDetail.jsx ---
-
+// Container und Wrapper Komponenten
 const PageContainer = styled.div`
-  background-color: var(--color-background-light);
-  min-height: 100vh;
-  padding: 0;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
 `;
 
 const ContentWrapper = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  background-color: var(--color-background);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-paper);
   border-radius: 16px;
-  margin-top: 30px;
-  margin-bottom: 30px;
+  padding: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
 `;
 
-const RecipeHeader = styled.header`
-  margin-bottom: 40px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--color-gray-200);
+const StatusContainer = styled.div`
+  padding: 50px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
 `;
 
+const Loading = styled.div`
+  font-size: 18px;
+  color: var(--color-primary);
+  margin: 20px 0;
+`;
+
+const ErrorMessageStyled = styled.div`
+  color: var(--color-danger);
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--color-danger-hover);
+  margin-bottom: 20px;
+  width: 100%;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+`;
+
+// Header-Komponenten
 const HeaderTopRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 `;
 
-const RecipeTitle = styled.h1`
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  line-height: 1.2;
-  margin: 0;
+const EditButton = styled.button`
+  padding: 8px 16px;
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--color-gray-100);
+  }
+  
+  svg {
+    font-size: 14px;
+  }
 `;
+
+const ImageSection = styled.div`
+  margin-bottom: 30px;
+  background-color: var(--color-gray-50);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border);
+  
+  h3 {
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+`;
+
+// Cook-Mode Komponenten
+const CookModeContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-background);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+`;
+
+const CookModeHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 30px;
+`;
+
+const CookModeTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-primary);
+`;
+
+const CookModeCloseButton = styled.button`
+  padding: 10px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  
+  &:hover {
+    background-color: var(--color-primary-hover);
+  }
+`;
+
+const CookModeStep = styled.div`
+  background-color: var(--color-paper);
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+`;
+
+const StepNumber = styled.div`
+  position: absolute;
+  top: -20px;
+  left: 30px;
+  background-color: var(--color-primary);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+`;
+
+const StepContent = styled.div`
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  
+  .step-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--color-text-primary);
+  }
+  
+  .step-description {
+    color: var(--color-text-secondary);
+  }
+  
+  strong {
+    color: var(--color-primary);
+  }
+`;
+
+const CookModeNavButton = styled.button`
+  padding: 12px 24px;
+  background-color: ${props => props.className === 'next' ? 'var(--color-primary)' : 'var(--color-background)'};
+  color: ${props => props.className === 'next' ? 'white' : 'var(--color-text-primary)'};
+  border: ${props => props.className === 'next' ? 'none' : '1px solid var(--color-border)'};
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: ${props => props.className === 'next' ? 'var(--color-primary-hover)' : 'var(--color-gray-100)'};
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+// --- Verbesserte Styling-Komponenten ---
 
 const RecipeImageWrapper = styled.div`
-  margin-bottom: 24px;
-  border-radius: 12px;
+  margin-bottom: 30px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme === 'dark' 
+    ? '0 8px 20px rgba(0, 0, 0, 0.3)' 
+    : '0 8px 20px rgba(0, 0, 0, 0.15)'};
   aspect-ratio: 16 / 9;
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 100px;
+  position: relative;
+  border: 1px solid var(--color-border);
 
   img {
     width: 100%;
@@ -69,20 +251,36 @@ const RecipeImageWrapper = styled.div`
     object-fit: cover;
     display: block;
   }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+    pointer-events: none;
+  }
 `;
 
-const ImageSection = styled.div`
-  margin-bottom: 24px;
-  padding: 20px;
-  background-color: #f2f2f7;
-  border-radius: 12px;
-
-  h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1d1d1f;
-    margin-top: 0;
-    margin-bottom: 16px;
+const RecipeTitle = styled.h1`
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background-color: var(--color-primary);
+    border-radius: 3px;
   }
 `;
 
@@ -90,17 +288,34 @@ const TagsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  margin: 20px 0;
 `;
 
 const Tag = styled.span`
   display: inline-block;
-  background-color: var(--color-gray-200);
-  color: var(--color-text-secondary);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-300)' 
+    : 'var(--color-gray-200)'};
+  color: ${props => props.theme === 'dark'
+    ? 'var(--color-gray-900)' 
+    : 'var(--color-text-secondary)'};
   font-size: 13px;
   font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 16px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  
+  ${props => props.highlight ? `
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 600;
+  ` : ''}
+`;
+
+const RecipeHeader = styled.header`
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
 `;
 
 const RecipeMeta = styled.div`
@@ -109,12 +324,24 @@ const RecipeMeta = styled.div`
   gap: 24px;
   color: var(--color-text-secondary);
   font-size: 15px;
+  margin-top: 25px;
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-100)' 
+    : 'var(--color-gray-50)'};
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
 `;
 
 const MetaItem = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  
+  svg {
+    color: var(--color-primary);
+    font-size: 18px;
+  }
   
   span {
     color: var(--color-text-secondary);
@@ -128,25 +355,45 @@ const MetaItem = styled.div`
 
 // --- Section Styles ---
 const Section = styled.section`
-  margin-bottom: 40px;
+  margin-bottom: 50px;
+  position: relative;
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 24px;
+  font-size: 1.8rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-gray-200);
+  margin-bottom: 25px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  svg {
+    color: var(--color-primary);
+    font-size: 24px;
+  }
 `;
 
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-gray-200);
+const SectionDescription = styled.div`
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  
+  p {
+    margin-bottom: 16px;
+  }
+`;
+
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 // --- Ingredient Styles ---
@@ -157,16 +404,29 @@ const IngredientList = styled.ul`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
+  
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Ingredient = styled.li`
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 12px;
-  background-color: var(--color-gray-100);
-  border-radius: 10px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
+  border-radius: 12px;
   font-size: 15px;
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
   
   strong {
     color: var(--color-text-primary);
@@ -179,6 +439,12 @@ const Ingredient = styled.li`
     color: var(--color-text-secondary);
     flex-grow: 1;
   }
+  
+  &::before {
+    content: '🥄';
+    font-size: 20px;
+    line-height: 1;
+  }
 `;
 
 // --- Steps Styles ---
@@ -189,29 +455,41 @@ const StepsList = styled.ol`
   counter-reset: steps;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 `;
 
 const Step = styled.li`
   counter-increment: steps;
   display: flex;
   gap: 16px;
-  background-color: var(--color-background);
-  padding: 20px;
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
+  padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: ${props => props.theme === 'dark' 
+    ? '0 4px 8px rgba(0, 0, 0, 0.25)' 
+    : '0 4px 8px rgba(0, 0, 0, 0.08)'};
   position: relative;
-  line-height: 1.6;
+  line-height: 1.7;
+  border: 1px solid var(--color-border);
+  
+  ${props => props.active ? `
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  ` : ''}
 
   &::before {
     content: counter(steps);
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    background-color: var(--color-gray-100);
-    color: var(--color-text-secondary);
+    min-width: 36px;
+    height: 36px;
+    background-color: ${props => props.theme === 'dark' 
+      ? 'var(--color-primary)' 
+      : 'var(--color-primary)'};
+    color: white;
     font-weight: 600;
     font-size: 16px;
     border-radius: 50%;
@@ -225,14 +503,14 @@ const Step = styled.li`
 
   .step-title {
     font-weight: 600;
-    font-size: 17px;
-    margin-bottom: 8px;
+    font-size: 18px;
+    margin-bottom: 10px;
     color: var(--color-text-primary);
   }
   
   .step-description,
   & > div:not(.step-title):not(.step-description) {
-    font-size: 15px;
+    font-size: 16px;
     color: var(--color-text-secondary);
   }
   
@@ -254,474 +532,133 @@ const Step = styled.li`
 
 // --- Nutrition Styles ---
 const NutritionSection = styled.div`
-  background-color: var(--color-gray-100);
-  border-radius: 12px;
-  padding: 20px;
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
 `;
 
 const NutritionGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 20px;
 `;
 
 const NutritionItem = styled.div`
-  padding: 16px;
-  background-color: var(--color-background);
-  border-radius: 10px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  padding: 20px 16px;
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  }
   
   span:first-child {
     font-weight: 500;
     color: var(--color-text-secondary);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 14px;
   }
   
   span:last-child {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-`;
-
-// --- Tips/Notes Styles (can combine if structure is similar) ---
-const NotesSection = styled.div`
-  margin-top: 20px;
-  padding: 16px;
-  background-color: var(--color-gray-100);
-  border-radius: 12px;
-
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    li {
-      color: var(--color-text-secondary);
-      line-height: 1.5;
-      font-size: 15px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--color-gray-200);
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-  }
-`;
-
-// --- Assistant Styles (Copied from Example) ---
-const AssistantSection = styled.div`
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 1px solid var(--color-gray-200);
-`;
-
-const AssistantTitle = styled.h2`
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 12px;
-`;
-
-const AssistantDescription = styled.p`
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  margin-bottom: 24px;
-  line-height: 1.5;
-`;
-
-const ChatContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 300px;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 12px;
-  overflow: hidden;
-  background-color: var(--color-gray-100);
-`;
-
-const MessagesContainer = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const MessageBubble = styled.div`
-  padding: 12px 18px;
-  border-radius: 20px;
-  max-width: 75%;
-  word-break: break-word;
-  line-height: 1.5;
-  font-size: 15px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-  ${props => props.$isUser ? `
-    align-self: flex-end;
-    background-color: var(--color-primary);
-    color: white;
-    border-bottom-right-radius: 6px;
-  ` : `
-    align-self: flex-start;
-    background-color: var(--color-background);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-gray-200);
-    border-bottom-left-radius: 6px;
-    
-    & strong, & b {
-      font-weight: 600;
-    }
-    
-    & ul {
-      margin-top: 8px;
-      margin-bottom: 8px;
-      padding-left: 20px;
-    }
-    
-    & li {
-      margin-bottom: 4px;
-    }
-  `}
-`;
-
-const InputContainer = styled.form`
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-  background-color: var(--color-gray-200);
-  border-top: 1px solid var(--color-gray-300);
-`;
-
-const StyledInput = styled.input`
-  flex: 1;
-  padding: 10px 16px;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 20px;
-  font-size: 15px;
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  
-  &:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
-  }
-
-  &::placeholder {
-    color: var(--color-text-tertiary);
-  }
-`;
-
-const SendButton = styled.button`
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-primary-dark);
-  }
-
-  &:disabled {
-    background-color: var(--color-primary-light);
-    cursor: not-allowed;
-  }
-
-  svg {
-    font-size: 18px;
-  }
-`;
-
-// --- Action Buttons (Adopted from Example) ---
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid var(--color-gray-200);
-`;
-
-// Use a simpler ActionButton or keep the previous versatile one
-const ActionButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 18px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-
-  ${(props) => {
-    switch (props.$variant) {
-      case 'danger':
-        return `
-          background-color: transparent;
-          color: var(--color-danger);
-        `;
-      default:
-        return `
-          background-color: var(--color-gray-200);
-          color: var(--color-primary);
-        `;
-    }
-  }}
-
-  &:hover {
-    ${(props) => {
-      switch (props.$variant) {
-        case 'danger':
-          return `
-            background-color: var(--color-danger-hover);
-          `;
-        default:
-          return `
-            background-color: var(--color-gray-300);
-          `;
-      }
-    }}
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-// Keep EditButton styling (slightly modified for consistency)
-const EditButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  margin-left: 16px; 
-
-  &:hover {
-    background-color: var(--color-gray-100);
-  }
-`;
-
-// Keep Cook Mode Styles (mostly unchanged)
-const CookModeContainer = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: var(--color-background); 
-  z-index: 1000;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-`;
-
-const CookModeHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--color-gray-200);
-  background-color: var(--color-background-translucent); 
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-`;
-
-const CookModeTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const CookModeCloseButton = styled.button`
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: 17px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px;
-`;
-
-const CookModeStep = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-`;
-
-const StepNumber = styled.div`
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--color-text-secondary); 
-  margin-bottom: 12px;
-  text-transform: uppercase;
-`;
-
-const StepContent = styled.div`
-  max-width: 650px;
-  width: 100%;
-  font-size: 22px; 
-  line-height: 1.6;
-  margin-bottom: 30px;
-  color: var(--color-text);
-  
-  .step-title {
-    font-size: 26px;
-    font-weight: 700;
-    margin-bottom: 15px;
-  }
-  
-  .step-description,
-  & > div:not(.step-title):not(.step-description) {
     font-size: 22px;
-  }
-
-  ul {
-    text-align: left;
-    display: inline-block;
-    margin-top: 15px;
-    padding-left: 25px;
-    li {
-      margin-bottom: 8px;
-    }
-  }
-
-  strong {
     font-weight: 700;
+    color: var(--color-primary);
   }
 `;
 
 const CookModeControls = styled.div`
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 650px; 
-  margin-top: auto; 
-  padding-top: 20px;
+  gap: 16px;
+  margin-top: 30px;
+  justify-content: center;
 `;
 
-const CookModeNavButton = styled.button`
+const FloatingActions = styled.div`
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 10;
+`;
+
+const ActionButton = styled(Button)`
+  border-radius: 50px;
+  width: auto;
   display: flex;
   align-items: center;
+  padding: 12px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   gap: 8px;
-  padding: 14px 24px;
-  border-radius: 12px;
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  background-color: var(--color-gray-100); 
-  color: var(--color-primary); 
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  font-weight: 500;
   
-  &:hover:not(:disabled) {
-    background-color: var(--color-gray-200);
-  }
-
-  &.next {
-    background-color: var(--color-primary);
-    color: white;
-    &:hover:not(:disabled) {
-      background-color: var(--color-primary-dark);
-    }
-     &:disabled {
-      background-color: var(--color-primary-light); 
-      color: white;
-      opacity: 1;
-    }
-  }
-
   svg {
     font-size: 18px;
   }
-`;
-
-const CookModeToggle = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background-color: var(--color-gray-200); 
-  color: var(--color-primary);
-  border: none;
-  border-radius: 10px;
-  font-weight: 500;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.2s;
   
   &:hover {
-    background-color: var(--color-gray-300);
-  }
-  
-  svg {
-    font-size: 16px;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
 `;
 
-// --- Loading & Error Styles (Adopted from Example/Improved) ---
-const StatusContainer = styled.div`
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 40px;
-  background-color: var(--color-background);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  text-align: center;
+const Divider = styled.div`
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-border) 50%,
+    transparent 100%
+  );
+  margin: 40px 0;
 `;
 
-const Loading = styled.div`
-  font-weight: 500;
-  color: var(--color-primary);
-  font-size: 18px;
-  padding: 40px;
+const RecipeImagePlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  background: linear-gradient(135deg, var(--color-gray-200) 0%, var(--color-gray-100) 100%);
 `;
 
-// Manuell definierte Error Message Komponente als Ersatz
-const ErrorMessageStyled = styled.div` 
-  color: var(--color-danger);
-  padding: 20px;
+const TipsContainer = styled.div`
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-100)' 
+    : 'var(--color-primary-light)'};
   border-radius: 12px;
-  background-color: var(--color-danger-hover);
-  margin-bottom: 24px;
-  font-size: 15px;
-  line-height: 1.5;
+  padding: 24px;
+  margin-top: 16px;
+  
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    
+    li {
+      margin-bottom: 12px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 `;
 
 // --- Component Logic ---
@@ -731,6 +668,7 @@ const RecipeDetail = () => {
   const navigate = useNavigate();
   const { getRecipeById, deleteRecipe, error: recipesError } = useRecipes();
   const { getAssistance, isLoading: assistantLoading } = useAIService();
+  const { theme } = useTheme();
   
   const [recipe, setRecipe] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -925,16 +863,26 @@ const RecipeDetail = () => {
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
+      // Use the API_BASE_URL directly from our api.js
+      const apiUrl = API_BASE_URL;
+      console.log(`Uploading to: ${apiUrl}/recipes/${id}/image`);
+      
       const token = localStorage.getItem('token');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       const response = await fetch(`${apiUrl}/recipes/${id}/image`, {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
           headers: {
             ...(token && { 'Authorization': `Bearer ${token}` })
           }
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
           let errorData = 'Upload fehlgeschlagen';
@@ -950,7 +898,15 @@ const RecipeDetail = () => {
       setIsEditing(false);
     } catch (err) {
       console.error('Fehler beim Hochladen des Bildes:', err);
-      setLocalError(err.message || 'Fehler beim Hochladen des Bildes');
+      
+      // Provide a more helpful error message
+      if (err.name === 'AbortError') {
+        setLocalError('Der Upload wurde abgebrochen, da der Server nicht rechtzeitig geantwortet hat. Bitte versuchen Sie es später erneut.');
+      } else if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+        setLocalError('Verbindung zum Server fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung oder kontaktieren Sie den Administrator.');
+      } else {
+        setLocalError(err.message || 'Fehler beim Hochladen des Bildes');
+      }
     } finally {
       setIsImageUpdating(false);
     }
@@ -1099,7 +1055,7 @@ const RecipeDetail = () => {
               )}
             </ImageSection>
           ) : (
-            <RecipeImageWrapper>
+            <RecipeImageWrapper theme={theme}>
               {recipe.image && recipe.image.data ? (
                 <img 
                   src={`data:${recipe.image.contentType};base64,${recipe.image.data}`} 
@@ -1115,7 +1071,11 @@ const RecipeDetail = () => {
             {recipe.tags && recipe.tags.map((tag, index) => (
               <Tag key={index}>{tag}</Tag>
             ))}
-            {recipe.isAIGenerated && <Tag>KI-generiert</Tag>}
+            {recipe.isAIGenerated && <Tag theme={theme}>KI-generiert</Tag>}
+            {recipe.dietaryRestrictions?.map((diet, index) => (
+              <Tag key={index} theme={theme}>{diet}</Tag>
+            ))}
+            {recipe.cuisine && <Tag theme={theme}>{recipe.cuisine}</Tag>}
           </TagsContainer>
           
           <RecipeMeta>
@@ -1140,25 +1100,30 @@ const RecipeDetail = () => {
         
         {recipe.description && (
           <Section>
-            <div style={{ fontSize: '16px', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
+            <SectionTitle>
+              <FaInfoCircle /> Beschreibung
+            </SectionTitle>
+            <SectionDescription>
               {recipe.description.split('\\n\\n').map((para, index) => <p key={index}>{para}</p>)}
-            </div>
+            </SectionDescription>
           </Section>
         )}
         
         {recipe.ingredients && recipe.ingredients.length > 0 && (
           <Section>
-            <SectionTitle>Zutaten</SectionTitle>
+            <SectionTitle>
+              <FaAppleAlt /> Zutaten
+            </SectionTitle>
             <IngredientList>
               {recipe.ingredients.map((ingredient, index) => (
-                <Ingredient key={index}>
+                <Ingredient key={index} theme={theme}>
                   {ingredient.amount || ingredient.unit ? (
                     <> 
                       <strong>{`${ingredient.amount || ''} ${ingredient.unit || ''}`.trim()}</strong>
                       <span>{ingredient.name}</span>
                     </>
                   ) : (
-                    <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span> 
+                    <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span>
                   )}
                 </Ingredient>
               ))}
@@ -1168,47 +1133,58 @@ const RecipeDetail = () => {
         
         {recipe.steps && recipe.steps.length > 0 && (
           <Section>
-            <SectionHeader>
-              <SectionTitle style={{ borderBottom: 'none', marginBottom: 0 }}>Zubereitung</SectionTitle>
-              <CookModeToggle onClick={toggleCookMode}>
-                <FaUtensils /> Kochmodus
-              </CookModeToggle>
-            </SectionHeader>
+            <SectionTitle>
+              <FaClipboardList /> Zubereitung
+            </SectionTitle>
             <StepsList>
               {recipe.steps.map((step, index) => (
-                <Step key={index}>
+                <Step 
+                  key={index} 
+                  theme={theme}
+                  active={isCookMode && index === currentStep}
+                >
                   <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
                 </Step>
               ))}
             </StepsList>
+
+            {!isCookMode && recipe.steps.length > 1 && (
+              <CookModeControls>
+                <ActionButton onClick={toggleCookMode} variant="primary">
+                  <FaBook /> Schritt-für-Schritt-Modus starten
+                </ActionButton>
+              </CookModeControls>
+            )}
           </Section>
         )}
         
-        {recipe.nutrition && (recipe.nutrition.calories || recipe.nutrition.protein || recipe.nutrition.carbs || recipe.nutrition.fat) && ( 
+        {recipe.nutrition && Object.keys(recipe.nutrition).length > 0 && (
           <Section>
-            <SectionTitle>Nährwerte (ca. pro Portion)</SectionTitle>
-            <NutritionSection>
+            <SectionTitle>
+              <FaBalanceScale /> Nährwerte (pro Portion)
+            </SectionTitle>
+            <NutritionSection theme={theme}>
               <NutritionGrid>
                 {recipe.nutrition.calories && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Kalorien</span>
                     <span>{recipe.nutrition.calories} kcal</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.protein && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Eiweiß</span>
                     <span>{recipe.nutrition.protein} g</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.carbs && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Kohlenhydrate</span>
                     <span>{recipe.nutrition.carbs} g</span>
                   </NutritionItem>
                 )}
                 {recipe.nutrition.fat && (
-                  <NutritionItem>
+                  <NutritionItem theme={theme}>
                     <span>Fett</span>
                     <span>{recipe.nutrition.fat} g</span>
                   </NutritionItem>
@@ -1220,14 +1196,16 @@ const RecipeDetail = () => {
 
         {recipe.tips && recipe.tips.length > 0 && (
           <Section>
-             <SectionTitle>Tipps</SectionTitle>
-             <NotesSection>
+            <SectionTitle>
+              <FaLightbulb /> Tipps
+            </SectionTitle>
+            <TipsContainer theme={theme}>
               <ul>
                 {recipe.tips.map((tip, index) => (
                   <li key={index}>{tip}</li>
                 ))}
               </ul>
-            </NotesSection>
+            </TipsContainer>
           </Section>
         )}
         

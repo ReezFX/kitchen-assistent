@@ -66,15 +66,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login user
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     setLoading(true);
     setError(null);
     
     try {
+      console.log('Attempting login with API URL:', api.defaults.baseURL);
+      
       const { data } = await api.post('/auth/login', {
         email,
-        password
+        password,
+        rememberMe
       });
+      
+      console.log('Login successful');
       
       setUser(data);
       localStorage.setItem('user', JSON.stringify(data));
@@ -82,7 +87,29 @@ export const AuthProvider = ({ children }) => {
       
       return data;
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      console.error('Login error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      
+      let errorMessage = 'Login fehlgeschlagen';
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = error.response.data?.message || `Login fehlgeschlagen (${error.response.status})`;
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'Server nicht erreichbar. Bitte überprüfen Sie Ihre Internetverbindung.';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = error.message || 'Ein unbekannter Fehler ist aufgetreten.';
+      }
+      
+      setError(errorMessage);
       throw error;
     } finally {
       setLoading(false);

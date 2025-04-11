@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useAIService } from '../../hooks/useAIService';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../context/ThemeContext';
 import { FaUtensils, FaClock } from 'react-icons/fa';
 
 import Card from '../common/Card';
@@ -14,9 +15,13 @@ import ImageUpload from '../common/ImageUpload';
 
 // --- Base Styles inspired by Apple Design ---
 const PageContainer = styled.div`
-  background-color: var(--color-background-light);
+  background-color: var(--color-background);
   min-height: 100vh;
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 `;
 
 const ContentWrapper = styled.div`
@@ -24,16 +29,30 @@ const ContentWrapper = styled.div`
   margin: 0 auto;
   padding: 40px 20px;
   background-color: var(--color-background);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: ${props => props.theme === 'dark' 
+    ? '0 4px 20px rgba(0, 0, 0, 0.2)' 
+    : '0 4px 12px rgba(0, 0, 0, 0.08)'};
   border-radius: 16px;
   margin-top: 30px;
   margin-bottom: 30px;
+  border: 1px solid var(--color-border);
+  
+  @media (max-width: 768px) {
+    padding: 12px 10px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    border-radius: 8px;
+  }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  
+  @media (max-width: 768px) {
+    gap: 15px;
+  }
 `;
 
 const PreferencesContainer = styled.div`
@@ -93,13 +112,27 @@ const RecipeDisplay = styled.div`
   margin-top: 24px;
   background-color: var(--color-background);
   border-radius: 16px;
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid var(--color-border);
+  box-shadow: ${props => props.theme === 'dark' 
+    ? '0 4px 20px rgba(0, 0, 0, 0.2)' 
+    : '0 4px 12px rgba(0, 0, 0, 0.08)'};
+    
+  @media (max-width: 768px) {
+    border-radius: 12px;
+    margin-top: 16px;
+  }
 `;
 
 const RecipeHeader = styled.header`
   margin-bottom: 40px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--color-gray-200);
+  
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    padding: 0 15px 16px;
+  }
 `;
 
 const HeaderTopRow = styled.div`
@@ -107,6 +140,10 @@ const HeaderTopRow = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
 `;
 
 const RecipeTitle = styled.h1`
@@ -115,6 +152,10 @@ const RecipeTitle = styled.h1`
   color: var(--color-text-primary);
   line-height: 1.2;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
 `;
 
 const TagsContainer = styled.div`
@@ -126,8 +167,12 @@ const TagsContainer = styled.div`
 
 const Tag = styled.span`
   display: inline-block;
-  background-color: var(--color-gray-200);
-  color: var(--color-text-secondary);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-300)' 
+    : 'var(--color-gray-200)'};
+  color: ${props => props.theme === 'dark'
+    ? 'var(--color-gray-900)' 
+    : 'var(--color-text-secondary)'};
   font-size: 13px;
   font-weight: 500;
   padding: 5px 12px;
@@ -140,6 +185,11 @@ const RecipeMeta = styled.div`
   gap: 24px;
   color: var(--color-text-secondary);
   font-size: 15px;
+  
+  @media (max-width: 768px) {
+    gap: 12px;
+    flex-direction: column;
+  }
 `;
 
 const MetaItem = styled.div`
@@ -161,6 +211,11 @@ const MetaItem = styled.div`
 const Section = styled.section`
   margin-bottom: 40px;
   padding: 0 20px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 30px;
+    padding: 0 15px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -170,6 +225,11 @@ const SectionTitle = styled.h2`
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--color-gray-200);
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
 `;
 
 // --- Ingredient Styles ---
@@ -180,6 +240,11 @@ const IngredientList = styled.ul`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 `;
 
 const Ingredient = styled.li`
@@ -187,7 +252,9 @@ const Ingredient = styled.li`
   align-items: baseline;
   gap: 10px;
   padding: 12px;
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   border-radius: 10px;
   font-size: 15px;
   
@@ -213,18 +280,29 @@ const StepsList = styled.ol`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  
+  @media (max-width: 768px) {
+    gap: 15px;
+  }
 `;
 
 const Step = styled.li`
   counter-increment: steps;
   display: flex;
   gap: 16px;
-  background-color: var(--color-background);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   position: relative;
   line-height: 1.6;
+
+  @media (max-width: 768px) {
+    padding: 15px;
+    gap: 12px;
+  }
 
   &::before {
     content: counter(steps);
@@ -233,7 +311,9 @@ const Step = styled.li`
     justify-content: center;
     min-width: 32px;
     height: 32px;
-    background-color: var(--color-gray-100);
+    background-color: ${props => props.theme === 'dark' 
+      ? 'var(--color-gray-200)' 
+      : 'var(--color-gray-100)'};
     color: var(--color-text-secondary);
     font-weight: 600;
     font-size: 16px;
@@ -251,12 +331,20 @@ const Step = styled.li`
     font-size: 17px;
     margin-bottom: 8px;
     color: var(--color-text-primary);
+    
+    @media (max-width: 768px) {
+      font-size: 16px;
+    }
   }
   
   .step-description,
   & > div:not(.step-title):not(.step-description) {
     font-size: 15px;
     color: var(--color-text-secondary);
+    
+    @media (max-width: 768px) {
+      font-size: 14px;
+    }
   }
   
   ul {
@@ -277,20 +365,33 @@ const Step = styled.li`
 
 // --- Nutrition Styles ---
 const NutritionSection = styled.div`
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   border-radius: 12px;
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const NutritionGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
 `;
 
 const NutritionItem = styled.div`
   padding: 16px;
-  background-color: var(--color-background);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-paper)' 
+    : 'var(--color-background)'};
   border-radius: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   display: flex;
@@ -315,7 +416,9 @@ const NutritionItem = styled.div`
 const ExtractedTitle = styled.div`
   margin-top: 10px;
   padding: 8px 12px;
-  background-color: var(--color-gray-100);
+  background-color: ${props => props.theme === 'dark' 
+    ? 'var(--color-gray-200)' 
+    : 'var(--color-gray-100)'};
   border-radius: 6px;
   font-size: 14px;
   color: var(--color-text-secondary);
@@ -351,10 +454,12 @@ const RecipeImageWrapper = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
-  padding: 20px;
-  border-top: 1px solid var(--color-gray-200);
+  gap: 10px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 8px;
+  }
 `;
 
 const SuccessMessage = styled.div`
@@ -375,6 +480,29 @@ const SuccessMessage = styled.div`
   }
 `;
 
+// Add these new styles for the mobile form
+const FormSection = styled.div`
+  margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 15px;
+  }
+  
+  h4 {
+    margin-bottom: 10px;
+    
+    @media (max-width: 768px) {
+      font-size: 16px;
+    }
+  }
+`;
+
+const ActionButton = styled(Button)`
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
 const RecipeGenerator = () => {
   const [ingredients, setIngredients] = useState([]);
   const [preferences, setPreferences] = useState({
@@ -392,6 +520,7 @@ const RecipeGenerator = () => {
   const { generateRecipe, isLoading, error: aiError } = useAIService();
   const { createRecipe, loading: saveLoading } = useRecipes();
   const { isAuthenticated } = useAuth();
+  const { theme } = useTheme();
 
   const handlePreferenceChange = (e) => {
     const { name, value } = e.target;
@@ -410,9 +539,9 @@ const RecipeGenerator = () => {
       // Create custom system prompt to guide the AI
       const systemPrompt = `
 Du bist ein professioneller Koch-Assistent. Erstelle ein detailliertes Rezept basierend auf den bereitgestellten Zutaten und Präferenzen. 
-Formatiere das Rezept wie folgt:
+Formatiere das Rezept EXAKT wie folgt (besonders wichtig ist die korrekte Formatierung des Titels):
 
-# Titel: [Rezeptname]
+# Titel: [Ein kreativer und passender Rezeptname basierend auf den Hauptzutaten]
 
 **Tags:** [Tag1], [Tag2], [Tag3 (inklusive der angegebenen Ernährungsform und Küchenstil)]
 
@@ -443,6 +572,7 @@ Formatiere das Rezept wie folgt:
 - [Tipp 1]
 - [Tipp 2]
 
+WICHTIG: Der Titel des Rezepts muss immer wie folgt formatiert sein: "# Titel: [Rezeptname]" 
 Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklärt werden, bei Bedarf mit Temperaturangaben und Zeitangaben. Achte darauf, dass alle angegebenen Zutaten im Rezept verwendet werden.`;
 
       const generatedRecipe = await generateRecipe(ingredients, preferences, systemPrompt);
@@ -550,9 +680,32 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
       return text.substring(startIndex, endIndex).trim();
     };
 
-    // Extract title
-    const titleMatch = text.match(/^# Titel:\s*(.+)$/m);
-    recipeData.title = titleMatch ? titleMatch[1].trim() : "Generiertes Rezept";
+    // Extract title - updated with more flexible patterns
+    const titlePatterns = [
+      /^# Titel:\s*(.+)$/m,           // Standard format from prompt
+      /^#\s*Titel:\s*(.+)$/m,         // With space after #
+      /^# (.+)$/m,                    // Just the title with # prefix
+      /^\s*Titel:\s*(.+)$/m,          // Title: without # prefix
+      /^[#\s]*(.+?)(?:\n|$)/m         // First line that could be a title
+    ];
+    
+    let titleMatch = null;
+    for (const pattern of titlePatterns) {
+      titleMatch = text.match(pattern);
+      if (titleMatch) {
+        recipeData.title = titleMatch[1].trim();
+        break;
+      }
+    }
+    
+    // If no title matched with any pattern, use first line or default
+    if (!recipeData.title) {
+      const firstLine = text.split('\n')[0].trim();
+      recipeData.title = firstLine || "Generiertes Rezept";
+      console.log('No title pattern matched, using first line:', firstLine);
+    } else {
+      console.log('Title extracted successfully:', recipeData.title);
+    }
 
     // Extract emoji
     const emojiMatch = text.match(/^\*\*Emoji:\*\*\s*(.+)$/m);
@@ -729,207 +882,167 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
 
   return (
     <PageContainer>
-      <ContentWrapper>
-        <Card title="Personalisiertes Rezept erstellen">
+      <ContentWrapper theme={theme}>
+        <Card title="Personalisiertes Rezept erstellen" theme={theme}>
           <Form onSubmit={handleSubmit}>
             {error && <Error>{error}</Error>}
             {aiError && <Error>{aiError}</Error>}
             {success && <SuccessMessage>{success}</SuccessMessage>}
             
-            <div>
+            <FormSection>
               <h4>Verfügbare Zutaten auswählen</h4>
               <IngredientSelector 
                 selectedIngredients={ingredients} 
                 onChange={setIngredients}
               />
-            </div>
+            </FormSection>
             
-            <div>
-              <h4>Präferenzen</h4>
+            <FormSection>
+              <h4>Präferenzen (optional)</h4>
               <PreferencesContainer>
-                <div>
-                  <label htmlFor="diet-select">Ernährungsform</label>
-                  <select 
-                    id="diet-select"
-                    name="diet"
-                    value={preferences.diet}
-                    onChange={handlePreferenceChange}
-                  >
-                    {dietOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Input
+                  type="select"
+                  label="Ernährungsform"
+                  name="diet"
+                  value={preferences.diet}
+                  onChange={handlePreferenceChange}
+                  options={dietOptions}
+                />
                 
-                <div>
-                  <label htmlFor="cuisine-select">Küchenstil</label>
-                  <select 
-                    id="cuisine-select"
-                    name="cuisine"
-                    value={preferences.cuisine}
-                    onChange={handlePreferenceChange}
-                  >
-                    {cuisineOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Input
+                  type="select"
+                  label="Küche / Stil"
+                  name="cuisine"
+                  value={preferences.cuisine}
+                  onChange={handlePreferenceChange}
+                  options={cuisineOptions}
+                />
               </PreferencesContainer>
               
-              <PreferencesContainer style={{ marginTop: '16px' }}>
-                <div>
-                  <label>Schwierigkeitsgrad</label>
-                  <select 
-                    name="difficulty"
-                    value={preferences.difficulty}
-                    onChange={handlePreferenceChange}
-                  >
-                    <option value="easy">Einfach</option>
-                    <option value="medium">Mittel</option>
-                    <option value="hard">Anspruchsvoll</option>
-                  </select>
-                </div>
-                <PreferencesContainer>
-                  <Input
-                    label="Vorbereitungszeit (Min.)"
-                    name="prepTime"
-                    type="number"
-                    placeholder="15"
-                    value={preferences.prepTime}
-                    onChange={handlePreferenceChange}
-                  />
-                  <Input
-                    label="Kochzeit (Min.)"
-                    name="cookTime"
-                    type="number"
-                    placeholder="20"
-                    value={preferences.cookTime}
-                    onChange={handlePreferenceChange}
-                  />
-                </PreferencesContainer>
+              <PreferencesContainer>
+                <Input
+                  type="select"
+                  label="Schwierigkeitsgrad"
+                  name="difficulty"
+                  value={preferences.difficulty}
+                  onChange={handlePreferenceChange}
+                  options={[
+                    { value: 'easy', label: 'Einfach' },
+                    { value: 'medium', label: 'Mittel' },
+                    { value: 'hard', label: 'Anspruchsvoll' },
+                  ]}
+                />
+                
+                <Input
+                  type="number"
+                  label="Zubereitungszeit (Minuten)"
+                  name="prepTime"
+                  value={preferences.prepTime}
+                  onChange={handlePreferenceChange}
+                  placeholder="15"
+                />
+                
+                <Input
+                  type="number"
+                  label="Kochzeit (Minuten)"
+                  name="cookTime"
+                  value={preferences.cookTime}
+                  onChange={handlePreferenceChange}
+                  placeholder="20"
+                />
               </PreferencesContainer>
-            </div>
+            </FormSection>
             
-            <Button 
-              type="submit" 
-              disabled={ingredients.length === 0 || isLoading}
-              fullWidth
-            >
-              {isLoading ? 'Rezept wird erstellt...' : 'Rezept erstellen'}
-            </Button>
+            <ButtonGroup>
+              <ActionButton 
+                primary 
+                type="submit" 
+                disabled={ingredients.length === 0 || isLoading}
+              >
+                {isLoading ? 'Generiere Rezept...' : 'Rezept generieren'}
+              </ActionButton>
+              
+              {recipe && isAuthenticated && (
+                <ActionButton 
+                  onClick={handleSaveRecipe} 
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Speichere...' : 'Rezept speichern'}
+                </ActionButton>
+              )}
+            </ButtonGroup>
+            
+            {isLoading && (
+              <Loading>Erstelle personalisiertes Rezept...</Loading>
+            )}
           </Form>
           
-          {isLoading && <Loading>Rezept wird generiert...</Loading>}
-          
           {recipePreview && !isLoading && (
-            <RecipeDisplay>
+            <RecipeDisplay theme={theme}>
               <RecipeHeader>
                 <HeaderTopRow>
                   <RecipeTitle>{recipePreview.title}</RecipeTitle>
                 </HeaderTopRow>
                 
                 <TagsContainer>
-                  <Tag>KI-generiert</Tag>
-                  {recipePreview.dietaryRestrictions?.map((diet, index) => (
-                    <Tag key={index}>{diet}</Tag>
+                  {recipePreview.tags.map((tag, index) => (
+                    <Tag key={index} theme={theme}>{tag}</Tag>
                   ))}
-                  {recipePreview.cuisine && <Tag>{recipePreview.cuisine}</Tag>}
                 </TagsContainer>
                 
                 <RecipeMeta>
                   <MetaItem>
-                    <FaUtensils /> 
-                    <span>Schwierigkeit:</span>
-                    <strong>{getDifficultyText(recipePreview.difficulty)}</strong>
+                    <FaUtensils />
+                    <span>Schwierigkeit: <strong>{getDifficultyText(recipePreview.difficulty)}</strong></span>
                   </MetaItem>
-                  {(recipePreview.prepTime || recipePreview.cookTime) && (
-                    <MetaItem>
-                      <FaClock /> 
-                      <span>Zeit:</span>
-                      <strong>
-                        {recipePreview.prepTime && `${recipePreview.prepTime} Min. Vorb.`}
-                        {recipePreview.prepTime && recipePreview.cookTime && ' / '}
-                        {recipePreview.cookTime && `${recipePreview.cookTime} Min. Kochz.`}
-                      </strong>
-                    </MetaItem>
-                  )}
+                  <MetaItem>
+                    <FaClock />
+                    <span>Zubereitungszeit: <strong>{recipePreview.prepTime} Min.</strong></span>
+                  </MetaItem>
+                  <MetaItem>
+                    <FaClock />
+                    <span>Kochzeit: <strong>{recipePreview.cookTime} Min.</strong></span>
+                  </MetaItem>
                 </RecipeMeta>
               </RecipeHeader>
               
-              {recipePreview.description && (
-                <Section>
-                  <div style={{ fontSize: '16px', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
-                    {recipePreview.description.split('\n\n').map((para, index) => <p key={index}>{para}</p>)}
-                  </div>
-                </Section>
-              )}
+              <Section>
+                <SectionTitle>Beschreibung</SectionTitle>
+                <p>{recipePreview.description}</p>
+              </Section>
               
-              {recipePreview.ingredients && recipePreview.ingredients.length > 0 && (
-                <Section>
-                  <SectionTitle>Zutaten</SectionTitle>
-                  <IngredientList>
-                    {recipePreview.ingredients.map((ingredient, index) => (
-                      <Ingredient key={index}>
-                        {ingredient.amount || ingredient.unit ? (
-                          <> 
-                            <strong>{`${ingredient.amount || ''} ${ingredient.unit || ''}`.trim()}</strong>
-                            <span>{ingredient.name}</span>
-                          </>
-                        ) : (
-                          <span style={{ gridColumn: '1 / -1' }}>{ingredient.name}</span>
-                        )}
-                      </Ingredient>
-                    ))}
-                  </IngredientList>
-                </Section>
-              )}
+              <Section>
+                <SectionTitle>Zutaten</SectionTitle>
+                <IngredientList>
+                  {recipePreview.ingredients.map((ingredient, index) => (
+                    <Ingredient key={index} theme={theme}>
+                      <strong>{ingredient.amount}</strong>
+                      <span>{ingredient.name}</span>
+                    </Ingredient>
+                  ))}
+                </IngredientList>
+              </Section>
               
-              {recipePreview.steps && recipePreview.steps.length > 0 && (
-                <Section>
-                  <SectionTitle>Zubereitung</SectionTitle>
-                  <StepsList>
-                    {recipePreview.steps.map((step, index) => (
-                      <Step key={index}>
-                        <div className="step-content" dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
-                      </Step>
-                    ))}
-                  </StepsList>
-                </Section>
-              )}
+              <Section>
+                <SectionTitle>Zubereitung</SectionTitle>
+                <StepsList>
+                  {recipePreview.steps.map((step, index) => (
+                    <Step key={index} theme={theme} dangerouslySetInnerHTML={{ __html: formatStepText(step) }} />
+                  ))}
+                </StepsList>
+              </Section>
               
-              {recipePreview.nutrition && Object.keys(recipePreview.nutrition).length > 0 && ( 
+              {recipePreview.nutrition && (
                 <Section>
-                  <SectionTitle>Nährwerte (ca. pro Portion)</SectionTitle>
-                  <NutritionSection>
+                  <SectionTitle>Nährwerte (pro Portion)</SectionTitle>
+                  <NutritionSection theme={theme}>
                     <NutritionGrid>
-                      {recipePreview.nutrition.calories && (
-                        <NutritionItem>
-                          <span>Kalorien</span>
-                          <span>{recipePreview.nutrition.calories} kcal</span>
+                      {Object.entries(recipePreview.nutrition).map(([key, value]) => (
+                        <NutritionItem key={key} theme={theme}>
+                          <span>{key}</span>
+                          <span>{value}</span>
                         </NutritionItem>
-                      )}
-                      {recipePreview.nutrition.protein && (
-                        <NutritionItem>
-                          <span>Eiweiß</span>
-                          <span>{recipePreview.nutrition.protein} g</span>
-                        </NutritionItem>
-                      )}
-                      {recipePreview.nutrition.carbs && (
-                        <NutritionItem>
-                          <span>Kohlenhydrate</span>
-                          <span>{recipePreview.nutrition.carbs} g</span>
-                        </NutritionItem>
-                      )}
-                      {recipePreview.nutrition.fat && (
-                        <NutritionItem>
-                          <span>Fett</span>
-                          <span>{recipePreview.nutrition.fat} g</span>
-                        </NutritionItem>
-                      )}
+                      ))}
                     </NutritionGrid>
                   </NutritionSection>
                 </Section>
@@ -945,10 +1058,10 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
                   </ul>
                 </Section>
               )}
-
+              
               {isAuthenticated && (
                 <>
-                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-gray-200)' }}>
+                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-border)' }}>
                     <h4>Rezeptbild hinzufügen (optional)</h4>
                     <ImageUpload 
                       onChange={handleImageChange}
@@ -968,12 +1081,11 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
             </RecipeDisplay>
           )}
           
-          {/* Fallback display if preview parsing fails but raw text exists */}
           {!recipePreview && recipe && !isLoading && (
-            <RecipeDisplay>
+            <RecipeDisplay theme={theme}>
               <RecipeTitle>Dein Rezept (Vorschau fehlgeschlagen)</RecipeTitle>
               {recipe.text && recipe.text.toLowerCase().includes('titel:') && (
-                <ExtractedTitle>
+                <ExtractedTitle theme={theme}>
                   Erkannter Titel: {recipe.text.match(/titel\s*:\s*([^\n]+)/i)?.[1] || "Nicht gefunden"}
                 </ExtractedTitle>
               )}
@@ -981,7 +1093,7 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
               
               {isAuthenticated && (
                 <>
-                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-gray-200)' }}>
+                  <div style={{ margin: '20px', padding: '20px 0', borderTop: '1px solid var(--color-border)' }}>
                     <h4>Rezeptbild hinzufügen (optional)</h4>
                     <ImageUpload 
                       onChange={handleImageChange}

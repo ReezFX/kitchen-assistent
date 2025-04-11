@@ -7,11 +7,26 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+  
+  @media (max-width: 768px) {
+    gap: 12px;
+  }
 `;
 
 const InputRow = styled.div`
   display: flex;
   gap: 8px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+`;
+
+const MobileAddButton = styled(Button)`
+  @media (max-width: 768px) {
+    margin-top: 4px;
+  }
 `;
 
 const IngredientList = styled.div`
@@ -19,6 +34,10 @@ const IngredientList = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+  
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
 `;
 
 const IngredientTag = styled.div`
@@ -29,6 +48,11 @@ const IngredientTag = styled.div`
   border-radius: 16px;
   background-color: var(--color-gray-200);
   font-size: 14px;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+    padding: 4px 6px;
+  }
 `;
 
 const RemoveButton = styled.button`
@@ -45,6 +69,11 @@ const RemoveButton = styled.button`
   &:hover {
     color: var(--color-danger);
   }
+  
+  @media (max-width: 768px) {
+    font-size: 18px; /* Slightly larger touch target on mobile */
+    padding: 4px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -54,6 +83,11 @@ const EmptyState = styled.div`
   border-radius: 8px;
   color: var(--color-gray-500);
   font-size: 14px;
+  
+  @media (max-width: 768px) {
+    padding: 12px;
+    font-size: 13px;
+  }
 `;
 
 const IngredientSelector = ({ selectedIngredients, onChange }) => {
@@ -87,13 +121,13 @@ const IngredientSelector = ({ selectedIngredients, onChange }) => {
           onChange={(e) => setNewIngredient(e.target.value)}
           onKeyPress={handleKeyPress}
         />
-        <Button 
+        <MobileAddButton 
           type="button"
           onClick={handleAddIngredient}
           disabled={newIngredient.trim() === ''}
         >
           Hinzufügen
-        </Button>
+        </MobileAddButton>
       </InputRow>
       
       {selectedIngredients.length > 0 ? (

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Header from './Header';
 import { useTheme } from '../../context/ThemeContext';
+import { MobileLayout } from '../ui';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -99,7 +100,42 @@ const FooterLink = styled.a`
 const Layout = ({ children, hideFooter = false }) => {
   const { theme } = useTheme();
   const currentYear = new Date().getFullYear();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  // Render different layouts for mobile and desktop
+  if (isMobile) {
+    return (
+      <MobileLayout hideNavigation={false}>
+        {children}
+        {!hideFooter && (
+          <Footer $hideFooter={hideFooter}>
+            <FooterContent>
+              <div>© {currentYear} Koch-Assistent</div>
+              <FooterLinks>
+                <FooterLink href="/about">Über uns</FooterLink>
+                <FooterLink href="/privacy">Datenschutz</FooterLink>
+                <FooterLink href="/terms">Nutzungsbedingungen</FooterLink>
+              </FooterLinks>
+            </FooterContent>
+          </Footer>
+        )}
+      </MobileLayout>
+    );
+  }
+  
+  // Desktop layout
   return (
     <Container data-theme={theme}>
       <Header />

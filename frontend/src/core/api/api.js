@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-// Bei externem Zugriff verwenden wir einen relativen Pfad
-// Dies erfordert einen Proxy im Frontend-Container oder einen Reverse Proxy
-const API_URL = '/api';
+// Use a consistent API URL approach 
+const API_URL = process.env.REACT_APP_API_URL || '/api';
+
 console.log('Using API URL:', API_URL);
+
+// Export the API base URL for direct fetch calls (used in image uploads)
+export const API_BASE_URL = API_URL;
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -11,7 +14,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 Sekunden Timeout (erhöht von 15s)
+  timeout: 30000, // 30 seconds timeout
   timeoutErrorMessage: 'Request timeout: The server took too long to respond',
 });
 

@@ -517,6 +517,8 @@ const LoginPage = () => {
     e.preventDefault();
     setFormError('');
     
+    console.log('Login form submitted with email:', formData.email);
+    
     // Validation
     if (!formData.email || !formData.password) {
       setFormError('Bitte gib deine E-Mail und dein Passwort ein');
@@ -525,6 +527,7 @@ const LoginPage = () => {
     
     try {
       await login(formData.email, formData.password, formData.rememberMe);
+      console.log('Login successful, redirecting to home page');
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
