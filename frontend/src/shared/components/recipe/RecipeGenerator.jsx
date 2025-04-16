@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { FaUtensils, FaClock } from 'react-icons/fa';
 
 import Card from '../common/Card';
+import { TextShimmerWaveColor } from '../ui/TextShimmerWaveColor';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import IngredientSelector from './IngredientSelector';
@@ -973,7 +974,9 @@ Verwende klare, umsetzbare Anweisungen. Jeder Schritt sollte ausführlich erklä
             </ButtonGroup>
             
             {isLoading && (
-              <Loading>Erstelle personalisiertes Rezept...</Loading>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <TextShimmerWaveColor />
+              </div>
             )}
           </Form>
           
